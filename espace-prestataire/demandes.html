@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Demandes reçues — Eventis</title>
+  <meta name="description" content="Les demandes de devis reçues sur Eventis : client, événement, budget, statut et actions (accepter, refuser, répondre).">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('eventis_theme')||''}catch(e){}</script>
+  <link rel="stylesheet" href="/assets/css/fonts.css">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/components.css">
+  <link rel="stylesheet" href="/assets/css/pages/account.css">
+  <link rel="stylesheet" href="/assets/css/pages/provider.css">
+  <script src="/assets/vendor/gsap.min.js" defer></script>
+  <script src="/assets/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="/assets/vendor/supabase-js.min.js" defer></script>
+  <script src="/assets/js/core/auth-supabase.js" defer></script>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main id="main">
+    <section class="section">
+      <div class="container">
+        <nav class="tabs" aria-label="Espace prestataire">
+          <a href="/espace-prestataire/">Accueil</a>
+          <a href="/espace-prestataire/demandes.html" aria-current="page">Demandes</a>
+          <a href="/espace-prestataire/services.html">Services</a>
+          <a href="/espace-prestataire/profil.html">Profil</a>
+          <a href="/espace-prestataire/messages.html">Messages</a>
+        </nav>
+        <div class="account-head">
+          <h1>Demandes reçues</h1>
+          <p class="muted">Cliquez sur une demande pour voir le détail et y répondre.</p>
+        </div>
+        <div id="request-list" class="request-list" aria-live="polite">
+          <p class="skeleton skeleton--card" aria-hidden="true"></p>
+          <p class="skeleton skeleton--card" aria-hidden="true"></p>
+        </div>
+        <section id="request-detail" class="request-detail" aria-live="polite" hidden></section>
+      </div>
+    </section>
+  </main>
+  <footer id="site-footer"></footer>
+  <script type="module" src="/assets/js/pages/provider-requests.js"></script>
+</body>
+</html>

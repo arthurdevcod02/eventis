@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Profil public — Eventis</title>
+  <meta name="description" content="Gérez votre fiche prestataire Eventis : nom commercial, catégorie, description, coordonnées, fourchette de prix et photo de couverture.">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('eventis_theme')||''}catch(e){}</script>
+  <link rel="stylesheet" href="/assets/css/fonts.css">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/components.css">
+  <!-- .provider-grid / .provider-card vivent dans home.css (source unique — ruling R7) -->
+  <link rel="stylesheet" href="/assets/css/pages/home.css">
+  <link rel="stylesheet" href="/assets/css/pages/account.css">
+  <link rel="stylesheet" href="/assets/css/pages/provider.css">
+  <script src="/assets/vendor/gsap.min.js" defer></script>
+  <script src="/assets/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="/assets/vendor/supabase-js.min.js" defer></script>
+  <script src="/assets/js/core/auth-supabase.js" defer></script>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main id="main">
+    <section class="section">
+      <div class="container">
+        <nav class="tabs" aria-label="Espace prestataire">
+          <a href="/espace-prestataire/">Accueil</a>
+          <a href="/espace-prestataire/demandes.html">Demandes</a>
+          <a href="/espace-prestataire/services.html">Services</a>
+          <a href="/espace-prestataire/profil.html" aria-current="page">Profil</a>
+          <a href="/espace-prestataire/messages.html">Messages</a>
+        </nav>
+        <div class="account-head">
+          <h1>Profil public</h1>
+          <p class="muted">Les informations de votre fiche, visibles par les clients sur le catalogue.</p>
+        </div>
+        <div class="profile-grid">
+          <div class="profile-card">
+            <h2>Votre fiche</h2>
+            <form id="provider-form" action="#" method="post">
+              <div class="field">
+                <label for="f-business-name">Nom commercial</label>
+                <input id="f-business-name" name="businessName" type="text" required maxlength="120">
+              </div>
+              <div class="field">
+                <label for="f-category">Catégorie</label>
+                <select id="f-category" name="categoryId" required>
+                  <option value="" disabled>Chargement des catégories…</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="f-description">Description</label>
+                <textarea id="f-description" name="description" rows="5" maxlength="1000"
+                  placeholder="Présentez votre activité, votre expérience, vos spécialités…"></textarea>
+              </div>
+              <div class="field">
+                <label for="f-city">Ville</label>
+                <input id="f-city" name="city" type="text" maxlength="80">
+              </div>
+              <div class="field">
+                <label for="f-quarter">Quartier</label>
+                <input id="f-quarter" name="quarter" type="text" maxlength="80">
+              </div>
+              <div class="field">
+                <label for="f-phone">Téléphone</label>
+                <input id="f-phone" name="phone" type="tel" autocomplete="tel" placeholder="+228 90 00 00 00">
+              </div>
+              <div class="field">
+                <label for="f-whatsapp">WhatsApp</label>
+                <input id="f-whatsapp" name="whatsapp" type="tel" placeholder="+228 90 00 00 00">
+              </div>
+              <div class="field">
+                <label for="f-price-from">Prix à partir de (FCFA)</label>
+                <input id="f-price-from" name="priceFrom" type="number" min="0" step="1" inputmode="numeric" autocomplete="off">
+              </div>
+              <div class="field">
+                <label for="f-price-to">Prix jusqu'à (FCFA)</label>
+                <input id="f-price-to" name="priceTo" type="number" min="0" step="1" inputmode="numeric" autocomplete="off">
+              </div>
+              <div class="field">
+                <label for="f-cover-url">Photo de couverture (URL)</label>
+                <!-- type="text" volontairement : la graine stocke des chemins relatifs
+                     (/assets/img/…), que type="url" HTML5 rejetterait -->
+                <input id="f-cover-url" name="coverUrl" type="text" placeholder="https://… ou /assets/img/…">
+                <p class="muted field__hint" id="cover-hint" hidden>Upload disponible après connexion à Supabase.</p>
+              </div>
+              <button class="btn btn--primary" type="submit">Enregistrer ma fiche</button>
+            </form>
+          </div>
+          <div class="profile-card preview-card" id="preview-card">
+            <h2>Ce que voit le client</h2>
+            <div id="preview-slot" aria-live="polite"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer id="site-footer"></footer>
+  <script type="module" src="/assets/js/pages/provider-profile.js"></script>
+</body>
+</html>

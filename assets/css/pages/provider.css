@@ -1,0 +1,41 @@
+/* Espace prestataire Eventis — delta spécifique par-dessus account.css
+   (dashboard 4 cartes, bandeau d'attente d'approbation, éditeur de services,
+   aperçu de la fiche publique). La structure (.tabs, .dashboard, .request-*,
+   .profile-*) est mutualisée avec l'espace client dans account.css. */
+
+/* Bandeau « fiche en cours d'examen » (Étape 1) */
+.notice--pending { display: flex; gap: var(--space-3); align-items: flex-start;
+  background: rgba(249,115,22,.1); border: 1px solid rgba(249,115,22,.35);
+  border-radius: var(--radius-md); padding: var(--space-4) var(--space-5); }
+.notice--pending svg { flex: none; color: var(--color-orange); margin-top: 2px; }
+
+/* Dashboard : 4 cartes stats au lieu de 3 */
+.dashboard__stats--4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 1000px) { .dashboard__stats--4 { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .dashboard__stats--4 { grid-template-columns: 1fr; } }
+
+/* Pastille « non lu » sur les cartes demandes */
+.unread-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 10px;
+  border-radius: 999px; background: rgba(249,115,22,.14); color: var(--color-orange-hover);
+  font-size: .78rem; font-weight: 700; }
+.request-card__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  flex-wrap: wrap; color: var(--text-muted); font-size: .875rem; }
+
+/* --- Éditeur de services (Étape 3) ------------------------------------------ */
+.service-list { display: grid; gap: var(--space-3); }
+.service-row { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: var(--space-4); display: flex; align-items: flex-start; justify-content: space-between;
+  gap: var(--space-4); flex-wrap: wrap; }
+.service-row__info { min-width: 0; overflow-wrap: anywhere; }
+.service-row__label { font-family: var(--font-title); font-weight: 700; font-size: 1.05rem; }
+.service-row__price { font-weight: 700; white-space: nowrap; }
+.service-row__actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.service-row__confirm { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+  border-top: 1px dashed var(--border); padding-top: var(--space-3); width: 100%; }
+.service-edit { display: grid; gap: var(--space-3); width: 100%; }
+.service-edit .field { margin-bottom: 0; }
+.service-edit__actions { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+
+/* --- Profil public : aperçu carte client (R7) -------------------------------- */
+.preview-card h2 { font-size: 1.2rem; margin-bottom: var(--space-4); }
+.preview-card .provider-grid { max-width: 380px; }
