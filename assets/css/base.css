@@ -1,0 +1,30 @@
+/* Base Eventis — reset minimal, typographie, utilitaires */
+*, *::before, *::after { box-sizing: border-box; margin: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+h1, h2, h3 { font-family: var(--font-title); line-height: 1.1; font-weight: 700; }
+h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
+a { color: inherit; }
+img { max-width: 100%; display: block; }
+:focus-visible { outline: 3px solid var(--color-orange); outline-offset: 2px; }
+button { font: inherit; cursor: pointer; min-height: 44px; }
+
+.container { width: min(1120px, 100% - 2*var(--space-5)); margin-inline: auto; }
+.section { padding-block: var(--space-8); }
+
+/* Utilitaires */
+.muted { color: var(--text-muted); }
+.grid { display: grid; gap: var(--space-5); }
+.hidden { display: none !important; }
+
+/* Accessibilité — réduction des animations si demandé */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}

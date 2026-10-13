@@ -1,0 +1,37 @@
+:root {
+  --color-white: #FFFFFF;
+  --color-black: #111111;
+  --color-orange: #F97316;
+  --color-orange-hover: #EA580C;
+  --color-green: #16A34A;
+  --color-green-dark: #166534;
+  --color-gray-bg: #F5F5F5;
+  --color-gray-border: #E5E7EB;
+  --color-gray-text: #6B7280;
+  --bg: var(--color-white);
+  --bg-alt: var(--color-gray-bg);
+  --surface: var(--color-white);
+  --text: var(--color-black);
+  --text-muted: var(--color-gray-text);
+  --border: var(--color-gray-border);
+  --font-title: 'Syne', system-ui, sans-serif;
+  --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --radius-sm: 8px; --radius-md: 14px; --radius-lg: 22px;
+  --shadow-sm: 0 1px 2px rgba(17,17,17,.06);
+  --shadow-md: 0 8px 24px rgba(17,17,17,.08);
+  --shadow-lg: 0 16px 48px rgba(17,17,17,.12);
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px;
+  --space-6: 32px; --space-7: 48px; --space-8: 64px; --space-9: 96px;
+  --nav-h: 72px;
+}
+[data-theme="dark"] {
+  --bg: #111111;
+  --bg-alt: #181818;
+  --surface: #1F1F1F;
+  --text: #F5F5F5;
+  --text-muted: #9CA3AF;
+  --border: #2E2E2E;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+  --shadow-md: 0 8px 24px rgba(0,0,0,.5);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,.6);
+}
