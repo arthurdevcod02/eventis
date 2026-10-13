@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Messages — Eventis</title>
+  <meta name="description" content="Vos conversations avec les prestataires Eventis : échanges par demande de devis, en un seul endroit.">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('eventis_theme')||''}catch(e){}</script>
+  <link rel="stylesheet" href="/assets/css/fonts.css">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/components.css">
+  <link rel="stylesheet" href="/assets/css/components/messaging.css">
+  <link rel="stylesheet" href="/assets/css/pages/account.css">
+  <script src="/assets/vendor/gsap.min.js" defer></script>
+  <script src="/assets/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="/assets/vendor/supabase-js.min.js" defer></script>
+  <script src="/assets/js/core/auth-supabase.js" defer></script>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main id="main">
+    <section class="section">
+      <div class="container">
+        <nav class="tabs" aria-label="Espace client">
+          <a href="/compte/">Tableau de bord</a>
+          <a href="/compte/demandes.html">Mes demandes</a>
+          <a href="/compte/messages.html" aria-current="page">Messages</a>
+          <a href="/compte/profil.html">Profil</a>
+        </nav>
+        <div class="account-head">
+          <h1>Messages</h1>
+          <p class="muted">Échangez avec les prestataires contactés pour votre événement.</p>
+        </div>
+        <div id="messaging">
+          <p class="skeleton skeleton--card" aria-hidden="true"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer id="site-footer"></footer>
+  <script type="module" src="/assets/js/pages/account-messages.js"></script>
+</body>
+</html>

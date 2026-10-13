@@ -1,0 +1,84 @@
+/* Messagerie Eventis — module partagé client/prestataire (Tâche 8, réutilisée en Tâche 10).
+   Layout 2 colonnes (liste des fils + conversation), bulles, entête de conversation,
+   compositeur, verrou des demandes clôturées/refusées, états vides, bascule mobile. */
+
+.messaging { display: grid; grid-template-columns: minmax(300px, 360px) 1fr;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  overflow: hidden; height: clamp(520px, calc(100dvh - var(--nav-h) - 2*var(--space-7)), 780px); }
+
+/* --- Colonne : liste des fils ------------------------------------------------ */
+.thread-list { border-right: 1px solid var(--border); overflow-y: auto; min-height: 0;
+  display: flex; flex-direction: column; }
+.thread-list__head { padding: var(--space-4) var(--space-4) var(--space-2); }
+.thread-list__head h2 { font-size: 1.1rem; }
+.thread-list__items { list-style: none; margin: 0; padding: 0 var(--space-2) var(--space-2);
+  display: grid; gap: 2px; }
+.thread-list__note { padding: var(--space-3); color: var(--text-muted); }
+
+.thread-item { display: grid; grid-template-columns: 1fr auto; gap: 2px var(--space-3); width: 100%;
+  text-align: left; padding: var(--space-3); border: 0; border-radius: var(--radius-sm);
+  background: none; color: inherit; font: inherit; transition: background .15s; }
+.thread-item:hover { background: var(--bg-alt); }
+.thread-item.is-active { background: rgba(249,115,22,.1); }
+.thread-item__name { font-weight: 700; font-family: var(--font-title); min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thread-item__time { color: var(--text-muted); font-size: .8rem; white-space: nowrap; }
+.thread-item__preview { grid-column: 1 / -1; color: var(--text-muted); font-size: .875rem;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thread-item__badge { display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px;
+  background: var(--color-orange); color: #fff; font-size: .75rem; font-weight: 700; }
+
+/* --- Colonne : conversation --------------------------------------------------- */
+.thread-view { display: grid; grid-template-rows: auto 1fr auto; min-width: 0; min-height: 0; }
+.thread-view__head { display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); }
+.thread-view__back { display: none; align-items: center; justify-content: center;
+  width: 44px; height: 44px; flex: none; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--text); }
+.thread-view__back:hover { border-color: var(--color-orange); color: var(--color-orange); }
+.thread-view__title { min-width: 0; display: grid; gap: 1px; }
+.thread-view__title h2 { font-size: 1.1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thread-view__title .muted { font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.thread-view__status { margin-left: auto; flex: none; }
+
+.thread-view__messages { overflow-y: auto; min-height: 0; padding: var(--space-5) var(--space-4);
+  display: flex; flex-direction: column; gap: var(--space-3); background: var(--bg-alt); }
+.bubble { max-width: min(75%, 560px); padding: 10px var(--space-4); border-radius: var(--radius-md);
+  background: var(--surface); border: 1px solid var(--border); overflow-wrap: anywhere; }
+.bubble--own { align-self: flex-end; background: var(--color-orange); border-color: var(--color-orange);
+  color: #fff; }
+.bubble__meta { display: block; margin-top: 4px; font-size: .75rem;
+  color: var(--text-muted); }
+.bubble--own .bubble__meta { color: rgba(255,255,255,.85); }
+
+/* --- Compositeur / verrou ------------------------------------------------------ */
+.thread-view__composer { border-top: 1px solid var(--border); padding: var(--space-3) var(--space-4);
+  display: grid; gap: var(--space-2); }
+.thread-view__composer form { display: grid; grid-template-columns: 1fr auto; gap: var(--space-3);
+  align-items: end; }
+.thread-view__composer textarea { font: inherit; color: var(--text); background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px;
+  min-height: 48px; max-height: 160px; resize: vertical; }
+.thread-view__composer textarea:focus { border-color: var(--color-orange); outline: none;
+  box-shadow: 0 0 0 3px rgba(249,115,22,.18); }
+.thread-view__composer textarea[disabled] { background: var(--bg-alt); color: var(--text-muted); }
+.thread-view__hint { font-size: .8rem; color: var(--text-muted); }
+.thread-view__lock { display: flex; align-items: center; gap: var(--space-3);
+  background: var(--bg-alt); border: 1px dashed var(--border); border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4); color: var(--text-muted); font-size: .9rem; }
+.thread-view__lock svg { flex: none; }
+
+/* --- États vides ---------------------------------------------------------------- */
+.thread-view__empty { grid-row: 1 / -1; display: grid; place-content: center; justify-items: center;
+  gap: var(--space-2); text-align: center; color: var(--text-muted); padding: var(--space-5); }
+.thread-view__empty svg { color: var(--color-orange); }
+
+/* --- Mobile : liste plein écran, conversation avec retour ------------------------- */
+@media (max-width: 760px) {
+  .messaging { grid-template-columns: 1fr; height: calc(100dvh - var(--nav-h) - 2*var(--space-6)); }
+  .thread-view { display: none; }
+  .messaging.is-open .thread-view { display: grid; }
+  .messaging.is-open .thread-list { display: none; }
+  .thread-view__back { display: inline-flex; }
+}
