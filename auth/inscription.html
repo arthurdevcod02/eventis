@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Inscription — Eventis</title>
+  <meta name="description" content="Créez votre compte Eventis en quelques instants : cherchez un prestataire pour votre événement ou proposez vos services.">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('eventis_theme')||''}catch(e){}</script>
+  <link rel="stylesheet" href="/assets/css/fonts.css">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/components.css">
+  <link rel="stylesheet" href="/assets/css/pages/auth.css">
+  <script src="/assets/vendor/gsap.min.js" defer></script>
+  <script src="/assets/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="/assets/vendor/supabase-js.min.js" defer></script>
+  <script src="/assets/js/core/auth-supabase.js" defer></script>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main id="main">
+    <section class="section auth-page">
+      <div class="container">
+        <div class="auth-card auth-card--wide">
+          <h1>Inscription</h1>
+          <p class="muted">Créez votre compte gratuit en quelques instants.</p>
+          <div id="reg-errors" class="form-errors" role="alert" hidden></div>
+          <form id="register-form" action="#" method="post">
+            <fieldset class="role-picker">
+              <legend class="role-picker__legend">Je m'inscris en tant que</legend>
+              <label class="role-card">
+                <span class="role-card__head">
+                  <input type="radio" name="role" value="client" checked>
+                  <span class="role-card__icon" data-icon="search"></span>
+                  Je cherche un prestataire
+                </span>
+                <span class="role-card__desc muted">Vous organisez un événement et cherchez les meilleurs prestataires.</span>
+              </label>
+              <label class="role-card">
+                <span class="role-card__head">
+                  <input type="radio" name="role" value="prestataire">
+                  <span class="role-card__icon" data-icon="star"></span>
+                  Je propose mes services
+                </span>
+                <span class="role-card__desc muted">Vous êtes prestataire événementiel et souhaitez recevoir des demandes.</span>
+              </label>
+            </fieldset>
+            <div class="field">
+              <label for="r-name">Nom complet</label>
+              <input id="r-name" name="fullName" type="text" autocomplete="name" required maxlength="120">
+            </div>
+            <div class="field">
+              <label for="r-email">E-mail</label>
+              <input id="r-email" name="email" type="email" autocomplete="email" required maxlength="190">
+            </div>
+            <div class="field">
+              <label for="r-phone">Téléphone</label>
+              <input id="r-phone" name="phone" type="tel" autocomplete="tel" required>
+            </div>
+            <div class="field">
+              <label for="r-password">Mot de passe</label>
+              <div class="pw-field">
+                <input id="r-password" name="password" type="password" autocomplete="new-password" required minlength="8">
+                <button type="button" class="pw-toggle" data-target="r-password" aria-label="Afficher le mot de passe" aria-pressed="false"></button>
+              </div>
+            </div>
+            <div class="field">
+              <label for="r-password2">Confirmer le mot de passe</label>
+              <div class="pw-field">
+                <input id="r-password2" name="password2" type="password" autocomplete="new-password" required minlength="8">
+                <button type="button" class="pw-toggle" data-target="r-password2" aria-label="Afficher le mot de passe" aria-pressed="false"></button>
+              </div>
+            </div>
+            <button class="btn btn--primary btn--block" type="submit">Créer mon compte</button>
+          </form>
+          <p class="auth-alt">Déjà un compte ? <a href="/auth/connexion.html">Se connecter</a></p>
+        </div>
+        <p class="auth-back"><a class="btn btn--outline" href="/">Retour à l'accueil</a></p>
+      </div>
+    </section>
+  </main>
+  <footer id="site-footer"></footer>
+  <script type="module" src="/assets/js/pages/auth-register.js"></script>
+</body>
+</html>

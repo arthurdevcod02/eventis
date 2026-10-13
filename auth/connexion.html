@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Connexion — Eventis</title>
+  <meta name="description" content="Connectez-vous à votre compte Eventis pour gérer vos demandes, vos messages et votre profil.">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('eventis_theme')||''}catch(e){}</script>
+  <link rel="stylesheet" href="/assets/css/fonts.css">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/components.css">
+  <link rel="stylesheet" href="/assets/css/pages/auth.css">
+  <script src="/assets/vendor/gsap.min.js" defer></script>
+  <script src="/assets/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="/assets/vendor/supabase-js.min.js" defer></script>
+  <script src="/assets/js/core/auth-supabase.js" defer></script>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main id="main">
+    <section class="section auth-page">
+      <div class="container">
+        <div class="auth-card">
+          <h1>Connexion</h1>
+          <p class="muted">Accédez à votre espace pour gérer vos demandes et vos messages.</p>
+          <div id="login-errors" class="form-errors" role="alert" hidden></div>
+          <form id="login-form" action="#" method="post">
+            <div class="field">
+              <label for="l-email">E-mail</label>
+              <input id="l-email" name="email" type="email" autocomplete="email" required maxlength="190">
+            </div>
+            <div class="field">
+              <label for="l-password">Mot de passe</label>
+              <div class="pw-field">
+                <input id="l-password" name="password" type="password" autocomplete="current-password" required>
+                <button type="button" class="pw-toggle" data-target="l-password" aria-label="Afficher le mot de passe" aria-pressed="false"></button>
+              </div>
+            </div>
+            <div class="field" id="demo-toggle-wrap" hidden>
+              <label class="auth-check">
+                <input type="checkbox" id="demo-toggle">
+                Afficher les identifiants démo
+              </label>
+            </div>
+            <div id="demo-accounts" class="demo-accounts" hidden></div>
+            <button class="btn btn--primary btn--block" type="submit">Se connecter</button>
+          </form>
+          <p class="auth-alt"><a href="#" id="forgot-link">Mot de passe oublié</a></p>
+          <p class="auth-alt">Pas encore de compte ? <a href="/auth/inscription.html">Créer un compte</a></p>
+        </div>
+        <p class="auth-back"><a class="btn btn--outline" href="/">Retour à l'accueil</a></p>
+      </div>
+    </section>
+  </main>
+  <footer id="site-footer"></footer>
+  <script type="module" src="/assets/js/pages/auth-login.js"></script>
+</body>
+</html>

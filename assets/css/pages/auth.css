@@ -1,0 +1,58 @@
+/* Pages d'authentification Eventis — carte centrée, œil mot de passe,
+   panneau identifiants démo et sélecteur de rôle (.role-card). */
+
+.auth-page .container { display: grid; justify-items: center; }
+
+/* Carte centrée */
+.auth-card { width: min(420px, 100%); background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: var(--space-6); }
+.auth-card--wide { width: min(560px, 100%); }
+.auth-card h1 { font-size: 1.6rem; margin-bottom: var(--space-2); }
+.auth-card > .muted { margin-bottom: var(--space-5); }
+
+/* Bouton œil adossé au champ mot de passe */
+.pw-field { position: relative; }
+.pw-field input { width: 100%; padding-right: 52px; }
+.pw-toggle { position: absolute; top: 50%; right: 4px; transform: translateY(-50%);
+  display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
+  border: 0; border-radius: var(--radius-sm); background: none; color: var(--text-muted); }
+.pw-toggle:hover { color: var(--color-orange); }
+
+/* Case à cocher « Afficher les identifiants démo » */
+.auth-check { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; cursor: pointer; }
+.auth-check input { width: 20px; height: 20px; accent-color: var(--color-orange); }
+
+/* Panneau identifiants démo (rempli par auth-login.js en mode démo uniquement) */
+#demo-toggle-wrap[hidden], .demo-accounts[hidden] { display: none; }
+.demo-accounts { margin: 0 0 var(--space-4); padding: var(--space-3) var(--space-4);
+  border: 1px dashed var(--border); border-radius: var(--radius-sm); display: grid; gap: var(--space-2); }
+.demo-accounts ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.demo-account { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.demo-account__mail { min-width: 0; overflow-wrap: anywhere; font-size: .85rem; }
+.demo-account .btn { flex: none; }
+
+/* Sélecteur de rôle : deux grandes cartes cliquables */
+.role-picker { border: 0; padding: 0; margin: 0 0 var(--space-5); min-inline-size: 0;
+  display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-3); }
+.role-picker__legend { font-weight: 600; font-size: .9rem; margin-bottom: var(--space-3); padding: 0; }
+.role-card { display: grid; gap: var(--space-2); align-content: start; padding: var(--space-4);
+  border: 2px solid var(--border); border-radius: var(--radius-md); cursor: pointer;
+  background: var(--surface); transition: border-color .2s, background .2s; }
+.role-card:hover { border-color: var(--color-orange); }
+.role-card.is-selected { border-color: var(--color-orange); background: rgba(249,115,22,.06); }
+.role-card input[type="radio"] { width: 20px; height: 20px; margin: 0; accent-color: var(--color-orange); flex: none; }
+.role-card__head { display: flex; align-items: center; gap: var(--space-2);
+  font-family: var(--font-title); font-weight: 700; line-height: 1.2; }
+.role-card__icon { display: inline-flex; color: var(--color-orange); flex: none; }
+.role-card__desc { font-size: .85rem; }
+
+/* Liens d'appoint et retour à l'accueil */
+.auth-alt { margin-top: var(--space-4); font-size: .9rem; text-align: center; }
+.auth-alt a { color: var(--color-orange); font-weight: 600; }
+.auth-back { margin-top: var(--space-5); }
+
+/* Mobile : cartes rôle empilées, carte moins rembourrée */
+@media (max-width: 560px) {
+  .role-picker { grid-template-columns: 1fr; }
+  .auth-card { padding: var(--space-5); }
+}
