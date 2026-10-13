@@ -1,0 +1,95 @@
+/* Page d'accueil Eventis — hero, catégories, étapes, prestataires à la une, témoignages, CTA. */
+
+/* Sections -------------------------------------------------------------- */
+.section--alt { background: var(--bg-alt); }
+.section h2 { margin-bottom: var(--space-6); }
+.section__head { display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-6); }
+.section__head h2 { margin-bottom: 0; }
+
+/* Hero ------------------------------------------------------------------ */
+.hero {
+  position: relative;
+  min-height: 88vh;
+  display: flex;
+  align-items: flex-end;
+  color: #fff;
+  background:
+    linear-gradient(100deg, rgba(17,17,17,.55) 0%, rgba(17,17,17,.3) 55%, rgba(17,17,17,0) 82%),
+    url(/assets/img/hero.jpg) center / cover no-repeat;
+}
+.hero__inner { padding-block: var(--space-8); }
+.hero__eyebrow { font-weight: 600; font-size: .8rem; letter-spacing: .14em;
+  text-transform: uppercase; color: rgba(255,255,255,.9); margin-bottom: var(--space-3); }
+.hero__title { font-size: clamp(2.4rem, 6vw, 4.25rem); max-width: 16ch; text-wrap: balance; }
+.hero__sub { margin-top: var(--space-4); max-width: 48ch; font-size: 1.1rem;
+  color: rgba(255,255,255,.92); }
+
+/* Barre de recherche du hero */
+.hero__search { margin-top: var(--space-6); width: min(680px, 100%);
+  display: flex; align-items: stretch; gap: var(--space-2);
+  background: var(--color-white); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg); padding: var(--space-2); }
+.hero__search select, .hero__search input { font: inherit; color: var(--color-black);
+  background: transparent; border: 0; padding: 12px 14px; min-height: 48px; min-width: 0; }
+.hero__search select { flex: 0 1 220px; }
+.hero__search input { flex: 1 1 auto; }
+.hero__search select:focus, .hero__search input:focus { outline: none; }
+.hero__search .btn { flex: none; }
+
+.hero__stats { margin-top: var(--space-6); display: flex; flex-wrap: wrap;
+  gap: var(--space-5); color: rgba(255,255,255,.85); }
+.hero__stats strong { font-family: var(--font-title); font-size: 1.5rem; color: #fff;
+  margin-right: var(--space-1); }
+
+/* Catégories ------------------------------------------------------------ */
+.category-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-4); }
+.category-card { display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-5); text-decoration: none; color: var(--text); font-weight: 600; }
+.category-card__icon { display: inline-flex; align-items: center; justify-content: center;
+  width: 48px; height: 48px; flex: none; border-radius: var(--radius-sm);
+  background: rgba(249,115,22,.12); color: var(--color-orange);
+  transition: background .2s, color .2s; }
+.category-card:hover .category-card__icon { background: var(--color-orange); color: #fff; }
+
+/* Étapes ---------------------------------------------------------------- */
+.steps { list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-5); }
+.steps li { background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: var(--space-5); }
+.steps strong { display: block; font-family: var(--font-title); font-size: 1.3rem;
+  margin-bottom: var(--space-2); }
+.steps strong::first-letter { color: var(--color-orange); }
+
+/* Prestataires à la une -------------------------------------------------- */
+.provider-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-5); }
+.provider-card { display: grid; grid-template-rows: auto 1fr; text-decoration: none;
+  color: var(--text); }
+.provider-card__media { position: relative; }
+.provider-card__media .badge--verified { position: absolute; top: var(--space-3);
+  left: var(--space-3); box-shadow: var(--shadow-sm); }
+.provider-card__price { font-weight: 700; }
+
+/* Témoignages ------------------------------------------------------------ */
+.testimonial-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-5); }
+.testimonial { margin: 0; padding: var(--space-5); display: grid; gap: var(--space-3);
+  align-content: start; }
+.testimonial blockquote { margin: 0; font-family: var(--font-title); font-weight: 500;
+  font-size: 1.05rem; line-height: 1.4; }
+.testimonial figcaption { display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-3); flex-wrap: wrap; }
+.demo-note { margin-top: var(--space-4); font-size: .875rem; }
+
+/* Appel à l'action -------------------------------------------------------- */
+.cta { background: var(--color-black); color: #fff; }
+.cta__inner { display: grid; justify-items: center; text-align: center; gap: var(--space-3); }
+
+/* Responsive -------------------------------------------------------------- */
+@media (max-width: 720px) {
+  .hero__search { flex-direction: column; }
+  .hero__search select, .hero__search input, .hero__search .btn { width: 100%; flex: 1 1 auto; }
+  .steps { grid-template-columns: 1fr; }
+}

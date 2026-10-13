@@ -4,13 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Accueil — Eventis</title>
-  <meta name="description" content="Eventis — L'excellence événementielle, connectée et sécurisée.">
+  <meta name="description" content="Eventis — L'excellence événementielle, connectée et sécurisée. Trouvez les meilleurs prestataires pour votre mariage, baptême, anniversaire ou événement d'entreprise.">
   <script>try{document.documentElement.dataset.theme=localStorage.getItem('eventis_theme')||''}catch(e){}</script>
   <link rel="stylesheet" href="/assets/css/fonts.css">
   <link rel="stylesheet" href="/assets/css/tokens.css">
   <link rel="stylesheet" href="/assets/css/base.css">
   <link rel="stylesheet" href="/assets/css/components.css">
-  <!-- css spécifique de la page -->
+  <link rel="stylesheet" href="/assets/css/pages/home.css">
   <script src="/assets/vendor/gsap.min.js" defer></script>
   <script src="/assets/vendor/ScrollTrigger.min.js" defer></script>
   <script src="/assets/vendor/supabase-js.min.js" defer></script>
@@ -19,11 +19,56 @@
 <body>
   <header id="site-header"></header>
   <main id="main">
-    <section class="section">
+    <section class="hero">
+      <div class="container hero__inner">
+        <p class="hero__eyebrow">Togo &amp; Afrique de l'Ouest</p>
+        <h1 class="hero__title">L'excellence événementielle,<br>connectée et sécurisée.</h1>
+        <p class="hero__sub">Trouvez les meilleurs prestataires pour votre mariage, baptême, anniversaire ou événement d'entreprise.</p>
+        <form id="hero-search" class="hero__search" role="search">
+          <select id="hs-category" aria-label="Catégorie"><option value="">Toutes les catégories</option></select>
+          <input id="hs-quarter" type="text" placeholder="Quartier (ex. Bè)" aria-label="Quartier">
+          <button class="btn btn--primary" type="submit">Rechercher</button>
+        </form>
+        <div class="hero__stats"><span><strong id="stat-providers">—</strong> prestataires</span><span><strong id="stat-categories">—</strong> catégories</span><span><strong>100 %</strong> gratuite</span></div>
+      </div>
+    </section>
+    <section class="section" id="categories">
       <div class="container">
-        <h1>Fondations Eventis</h1>
-        <p class="muted">Coquille temporaire — remplacée à la Tâche 2.</p>
-        <a class="btn btn--primary" href="/catalogue.html">Catalogue</a>
+        <h2>Parcourir par catégorie</h2>
+        <div id="category-grid" class="category-grid" data-reveal></div>
+      </div>
+    </section>
+    <section class="section section--alt" id="steps">
+      <div class="container">
+        <h2>Comment ça marche</h2>
+        <ol class="steps">
+          <li data-reveal><strong>1. Cherchez</strong><p>Filtrez par catégorie, quartier et budget pour trouver le prestataire idéal.</p></li>
+          <li data-reveal><strong>2. Comparez</strong><p>Consultez les tarifs, galeries et avis vérifiés pour choisir en confiance.</p></li>
+          <li data-reveal><strong>3. Contactez</strong><p>Envoyez une demande de devis et échangez directement avec le prestataire.</p></li>
+        </ol>
+      </div>
+    </section>
+    <section class="section" id="featured">
+      <div class="container">
+        <div class="section__head">
+          <h2>Prestataires à la une</h2>
+          <a class="btn btn--outline" href="/catalogue.html">Tout voir</a>
+        </div>
+        <div id="featured-grid" class="provider-grid"></div>
+      </div>
+    </section>
+    <section class="section section--alt" id="testimonials">
+      <div class="container">
+        <h2>Ils nous font confiance</h2>
+        <div id="testimonial-grid" class="testimonial-grid" data-reveal></div>
+        <p class="demo-note muted" hidden id="demo-note">Témoignages issus des données de démonstration.</p>
+      </div>
+    </section>
+    <section class="section cta">
+      <div class="container cta__inner" data-reveal>
+        <h2>Vous êtes prestataire ?</h2>
+        <p>Rejoignez Eventis et recevez des demandes de clients qualifiés.</p>
+        <a class="btn btn--primary" href="/auth/inscription.html?role=prestataire">Devenir prestataire</a>
       </div>
     </section>
   </main>
