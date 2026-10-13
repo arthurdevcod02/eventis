@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Catalogue — Eventis</title>
+  <meta name="description" content="Trouvez un prestataire événementiel de confiance à Lomé : traiteur, décoration, photo & vidéo, DJ, salles, location de matériel, wedding planner, animation. Filtrez par catégorie, quartier, budget et note.">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('eventis_theme')||''}catch(e){}</script>
+  <link rel="stylesheet" href="/assets/css/fonts.css">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/components.css">
+  <!-- .provider-grid / .provider-card vivent dans home.css (source unique — ruling R2 : ni déplacement ni duplication) -->
+  <link rel="stylesheet" href="/assets/css/pages/home.css">
+  <link rel="stylesheet" href="/assets/css/pages/catalogue.css">
+  <script src="/assets/vendor/gsap.min.js" defer></script>
+  <script src="/assets/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="/assets/vendor/supabase-js.min.js" defer></script>
+  <script src="/assets/js/core/auth-supabase.js" defer></script>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main id="main">
+    <section class="section">
+      <div class="container">
+        <header class="catalog-head">
+          <h1>Trouver un prestataire</h1>
+          <p id="results-meta" class="muted" role="status"></p>
+        </header>
+        <div class="catalog-layout">
+          <aside class="catalog-filters" aria-label="Filtres de recherche">
+            <details class="filters-toggle" id="filters-toggle" open>
+              <summary>Filtres</summary>
+              <form id="filters" class="filter-panel card">
+                <div class="field">
+                  <label for="f-q">Recherche</label>
+                  <input id="f-q" name="q" type="search" placeholder="Nom, activité…" autocomplete="off">
+                </div>
+                <div class="field">
+                  <label for="f-category">Catégorie</label>
+                  <select id="f-category" name="categorie">
+                    <option value="">Toutes les catégories</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="f-quarter">Quartier</label>
+                  <select id="f-quarter" name="quartier">
+                    <option value="">Tous les quartiers</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="f-budget">Budget max</label>
+                  <select id="f-budget" name="budget">
+                    <option value="">Tous les budgets</option>
+                    <option value="100000">100 000 FCFA</option>
+                    <option value="250000">250 000 FCFA</option>
+                    <option value="500000">500 000 FCFA</option>
+                    <option value="1000000">1 000 000 FCFA</option>
+                    <option value="2000000">2 000 000 FCFA et plus</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label for="f-note">Note minimale</label>
+                  <select id="f-note" name="note">
+                    <option value="">Toutes les notes</option>
+                    <option value="3">3 et plus</option>
+                    <option value="4">4 et plus</option>
+                    <option value="4.5">4,5 et plus</option>
+                  </select>
+                </div>
+                <div class="field">
+                  <label class="filter-check" for="f-verified">
+                    <input id="f-verified" name="verifies" type="checkbox" value="1">
+                    Vérifiés uniquement
+                  </label>
+                </div>
+                <div class="field">
+                  <label for="f-tri">Tri</label>
+                  <select id="f-tri" name="tri">
+                    <option value="pertinence">Pertinence</option>
+                    <option value="note">Meilleure note</option>
+                    <option value="prix-asc">Prix croissant</option>
+                    <option value="prix-desc">Prix décroissant</option>
+                  </select>
+                </div>
+                <div class="filter-panel__actions">
+                  <button class="btn btn--primary btn--block" type="submit">Appliquer</button>
+                  <button class="btn btn--ghost btn--block" type="button" id="f-reset">Réinitialiser</button>
+                </div>
+              </form>
+            </details>
+          </aside>
+          <div class="catalog-results">
+            <div id="results" class="provider-grid"></div>
+            <div id="empty" class="empty" hidden>
+              <span class="empty__icon" aria-hidden="true">
+                <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+              </span>
+              <h2>Aucun prestataire ne correspond à vos critères</h2>
+              <p>Essayez d'élargir votre recherche : retirez un filtre, augmentez votre budget ou changez de quartier.</p>
+              <button id="empty-reset" class="btn btn--primary" type="button">Élargir ma recherche</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer id="site-footer"></footer>
+  <script type="module" src="/assets/js/pages/catalogue.js"></script>
+</body>
+</html>

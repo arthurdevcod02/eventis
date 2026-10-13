@@ -1,7 +1,7 @@
 // Page d'accueil Eventis — hero + recherche, catégories, prestataires à la une, témoignages.
 import { db } from '../core/db.js';
 import { isDemoMode } from '../core/config.js';
-import { esc, icon, renderStars, formatFCFA, initReveal } from '../core/ui.js';
+import { esc, icon, renderStars, initReveal, providerCardHTML } from '../core/ui.js';
 import { mountNavbar } from '../components/navbar.js';
 import { mountFooter } from '../components/footer.js';
 
@@ -34,18 +34,9 @@ document.querySelector('#category-grid').innerHTML = cats.map(c => `
   </a>`).join('');
 
 // Prestataires à la une : vérifiés d'abord, puis mieux notés — 6 maximum.
+// Carte rendue par la source unique providerCardHTML (core/ui.js), partagée avec le catalogue.
 const featured = providers.slice(0, 6);
-document.querySelector('#featured-grid').innerHTML = featured.map(p => `
-  <a class="card provider-card" href="/prestataire.html?id=${p.id}">
-    <div class="provider-card__media"><img class="card__media" src="${esc(p.coverUrl)}" alt="${esc(p.businessName)}" loading="lazy">
-      ${p.isVerified ? `<span class="badge badge--verified">${icon('check')} Vérifié</span>` : ''}</div>
-    <div class="card__body">
-      <span class="card__meta">${esc(p.categoryName)} · ${esc(p.quarter)}</span>
-      <h3 class="card__title">${esc(p.businessName)}</h3>
-      <span class="stars">${renderStars(p.avgRating)} <span class="muted">(${p.reviewsCount})</span></span>
-      <span class="provider-card__price">À partir de ${formatFCFA(p.priceFrom)}</span>
-    </div>
-  </a>`).join('');
+document.querySelector('#featured-grid').innerHTML = featured.map(providerCardHTML).join('');
 
 // Témoignages : avis visibles des prestataires mis en avant (3 max).
 const reviews = (await Promise.all(featured.map(p => db.listReviewsForProvider(p.id)))).flat();

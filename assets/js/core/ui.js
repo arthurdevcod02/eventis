@@ -90,6 +90,21 @@ export function renderStars(avg) {
   return out + '</span>';
 }
 
+// --- Carte prestataire (source unique partagée par l'accueil et le catalogue) --
+export function providerCardHTML(p) {
+  return `
+  <a class="card provider-card" href="/prestataire.html?id=${p.id}">
+    <div class="provider-card__media"><img class="card__media" src="${esc(p.coverUrl)}" alt="${esc(p.businessName)}" loading="lazy">
+      ${p.isVerified ? `<span class="badge badge--verified">${icon('check')} Vérifié</span>` : ''}</div>
+    <div class="card__body">
+      <span class="card__meta">${esc(p.categoryName)} · ${esc(p.quarter)}</span>
+      <h3 class="card__title">${esc(p.businessName)}</h3>
+      <span class="stars">${renderStars(p.avgRating)} <span class="muted">(${p.reviewsCount})</span></span>
+      <span class="provider-card__price">À partir de ${formatFCFA(p.priceFrom)}</span>
+    </div>
+  </a>`;
+}
+
 // --- Toasts ------------------------------------------------------------------
 export function toast(message, type = 'info') {
   if (typeof document === 'undefined') return;

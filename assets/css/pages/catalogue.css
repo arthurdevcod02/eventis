@@ -1,0 +1,53 @@
+/* Page catalogue Eventis — disposition 2 colonnes, panneau de filtres repliable.
+   Les styles de la carte prestataire (.provider-grid, .provider-card) sont réutilisés
+   depuis home.css : source unique, aucune règle dupliquée ni déplacée (ruling R2). */
+
+/* En-tête de page : titre + compteur de résultats */
+.catalog-head { display: flex; align-items: baseline; justify-content: space-between;
+  gap: var(--space-4); flex-wrap: wrap; margin-bottom: var(--space-6); }
+.catalog-head h1 { margin-bottom: 0; }
+
+/* Disposition : colonne de filtres (280 px) + colonne de résultats */
+.catalog-layout { display: grid; grid-template-columns: 280px 1fr; gap: var(--space-6);
+  align-items: start; }
+.catalog-filters, .catalog-results { min-width: 0; }
+
+/* Panneau de filtres (carte sticky sous la navigation) */
+.filter-panel { position: sticky; top: calc(var(--nav-h) + var(--space-4));
+  padding: var(--space-5); }
+.filter-panel .field:last-of-type { margin-bottom: 0; }
+.filter-panel__actions { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
+
+/* Case à cocher « Vérifiés uniquement » : cible aérée et cohérente avec la palette */
+.filter-check { display: flex; align-items: center; gap: var(--space-2); min-height: 44px;
+  cursor: pointer; }
+.filter-check input { width: 20px; height: 20px; accent-color: var(--color-orange); }
+
+/* Volet repliable des filtres (mobile) */
+.filters-toggle > summary { list-style: none; display: flex; align-items: center;
+  justify-content: space-between; gap: var(--space-3); min-height: 44px; cursor: pointer;
+  padding: var(--space-3) var(--space-4); background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); font-family: var(--font-title); font-weight: 700; }
+.filters-toggle > summary::-webkit-details-marker { display: none; }
+.filters-toggle > summary::after { content: ''; width: 9px; height: 9px; flex: none;
+  border-right: 2px solid currentColor; border-bottom: 2px solid currentColor;
+  transform: rotate(45deg); transition: transform .2s; }
+.filters-toggle[open] > summary::after { transform: rotate(-135deg); }
+.filters-toggle[open] > summary { margin-bottom: var(--space-3); }
+
+/* État vide */
+.empty__icon { display: inline-flex; color: var(--text-muted); }
+.empty h2 { color: var(--text); font-size: 1.25rem; margin-bottom: var(--space-2); }
+.empty p { max-width: 42ch; margin-inline: auto; margin-bottom: var(--space-4); }
+.empty .btn { margin-top: var(--space-2); }
+
+/* Bureau : le panneau est toujours ouvert, l'en-tête repliable est masquée */
+@media (min-width: 841px) {
+  .filters-toggle > summary { display: none; }
+}
+
+/* Mobile : une colonne, filtres repliables, panneau non sticky */
+@media (max-width: 840px) {
+  .catalog-layout { grid-template-columns: 1fr; }
+  .filter-panel { position: static; }
+}
