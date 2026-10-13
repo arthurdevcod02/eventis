@@ -1,0 +1,93 @@
+/* Page fiche prestataire Eventis — galerie, en-tête, sections empilées, formulaire devis.
+   Palette : tokens uniquement (aucun violet, aucun jaune). Cibles tactiles ≥ 44 px. */
+
+/* Lien retour catalogue */
+.provider-back { margin-top: var(--space-4); }
+
+/* Galerie : couverture 16:9 (max 440 px) + bandeau de miniatures */
+.provider-gallery { margin-top: var(--space-4); }
+.provider-gallery[hidden] { display: none; }
+.provider-hero { position: relative; border-radius: var(--radius-lg); overflow: hidden;
+  box-shadow: var(--shadow-md); }
+.provider-hero::after { content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(17,17,17,0) 55%, rgba(17,17,17,.55)); }
+.provider-hero img { width: 100%; aspect-ratio: 16/9; max-height: 440px; object-fit: cover; }
+
+.provider-gallery__thumbs { display: flex; gap: var(--space-2); margin-top: var(--space-3);
+  overflow-x: auto; padding-bottom: var(--space-1); }
+.provider-gallery__thumbs[hidden] { display: none; }
+.provider-gallery__thumb { flex: none; padding: 0; border: 2px solid var(--border);
+  border-radius: var(--radius-sm); background: var(--surface); overflow: hidden;
+  min-height: 44px; transition: border-color .2s; }
+.provider-gallery__thumb img { width: 96px; height: 64px; object-fit: cover; display: block; }
+.provider-gallery__thumb:hover { border-color: var(--color-orange); }
+.provider-gallery__thumb[aria-pressed="true"] { border-color: var(--color-orange);
+  box-shadow: 0 0 0 3px rgba(249,115,22,.18); }
+
+/* En-tête de la fiche */
+.provider-head { display: flex; flex-wrap: wrap; align-items: center;
+  gap: var(--space-2) var(--space-4); padding-block: var(--space-5) var(--space-6); }
+.provider-head h1 { width: 100%; font-size: clamp(1.75rem, 4vw, 2.5rem); }
+.provider-head__meta { color: var(--text-muted); }
+.provider-head__rating { display: inline-flex; align-items: center; gap: var(--space-2); }
+.provider-head__contacts { display: flex; flex-wrap: wrap; gap: var(--space-3); width: 100%;
+  margin-top: var(--space-2); }
+.provider-head__contacts a { display: inline-flex; align-items: center; gap: var(--space-2);
+  min-height: 44px; padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); text-decoration: none; font-weight: 600; transition: border-color .2s, color .2s; }
+.provider-head__contacts a:hover { border-color: var(--color-orange); color: var(--color-orange); }
+.provider-head__contacts svg { width: 18px; height: 18px; flex: none; }
+
+/* Disposition : colonne principale + colonne formulaire */
+.provider-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px;
+  gap: var(--space-6); align-items: start; padding-bottom: var(--space-8); }
+.provider-main { display: grid; gap: var(--space-6); min-width: 0; }
+.provider-main .provider-section { min-width: 0; }
+.provider-section h2 { font-size: 1.35rem; margin-bottom: var(--space-4); }
+
+/* Services & tarifs : tableau .table réutilisé, colonne prix droite en Syne */
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius-md);
+  background: var(--surface); }
+.table-wrap .table { min-width: 420px; }
+.table-wrap th:first-child, .table-wrap td:first-child { padding-left: var(--space-5); }
+.table-wrap th:last-child, .table-wrap td:last-child { padding-right: var(--space-5); }
+.price-table__label { font-weight: 600; }
+.price-table__price { text-align: right; font-family: var(--font-title); font-weight: 700;
+  white-space: nowrap; }
+
+/* À propos */
+#about-text { max-width: 70ch; white-space: pre-line; }
+
+/* Avis */
+.reviews-list { display: grid; gap: var(--space-4); }
+.review { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: var(--space-4) var(--space-5); display: grid; gap: var(--space-2); align-content: start; }
+.review__head { display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-3); flex-wrap: wrap; }
+.review__author { font-weight: 700; }
+.review__date { color: var(--text-muted); font-size: .85rem; }
+
+/* Formulaire de devis / encart connexion : carte surface, radius-lg, ombre md */
+.quote-form { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md); padding: var(--space-5); display: grid; gap: 0; }
+.quote-form h2 { font-size: 1.35rem; margin-bottom: var(--space-4); }
+.quote-form .field { margin-bottom: var(--space-4); }
+.quote-form .field:last-of-type { margin-bottom: var(--space-4); }
+.quote-form textarea { resize: vertical; min-height: 120px; }
+.quote-form__hint { margin-top: var(--space-3); font-size: .85rem; }
+.quote-login { text-align: center; justify-items: stretch; }
+.quote-login h2 { width: 100%; }
+.quote-login .muted { margin-bottom: var(--space-2); }
+
+/* Colonne formulaire sticky sous la navigation (bureau) */
+.provider-aside { min-width: 0; }
+@media (min-width: 921px) {
+  .provider-aside .quote-form { position: sticky; top: calc(var(--nav-h) + var(--space-4)); }
+}
+
+/* Mobile : une colonne, formulaire sous les sections */
+@media (max-width: 920px) {
+  .provider-layout { grid-template-columns: 1fr; }
+  .provider-aside { order: 2; }
+  .provider-head__contacts a { flex: 1 1 auto; justify-content: center; }
+}
