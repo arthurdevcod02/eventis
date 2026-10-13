@@ -60,7 +60,7 @@
 .thread-view__composer textarea { font: inherit; color: var(--text); background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px;
   min-height: 48px; max-height: 160px; resize: vertical; }
-.thread-view__composer textarea:focus { border-color: var(--color-orange); outline: none;
+.thread-view__composer textarea:focus-visible { border-color: var(--color-orange);
   box-shadow: 0 0 0 3px rgba(249,115,22,.18); }
 .thread-view__composer textarea[disabled] { background: var(--bg-alt); color: var(--text-muted); }
 .thread-view__hint { font-size: .8rem; color: var(--text-muted); }
