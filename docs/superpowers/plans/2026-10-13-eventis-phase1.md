@@ -958,42 +958,60 @@ create index on public.messages(request_id);
 create index on public.reviews(provider_id);
 ```
 
-`rls.sql` : `alter table … enable row level security;` sur les 7 tables, puis politiques :
+`rls.sql` : `alter table … enable row level security;` sur les 7 tables, puis helpers et politiques :
 
 ```sql
--- profiles
-create policy "public read approved owners minimal" on public.profiles for select using (true);
-create policy "self update" on public.profiles for update using (auth.uid() = id);
-create policy "admin all" on public.profiles for all using (exists (select 1 from public.profiles p where p.id = auth.uid() and p.role = 'admin'));
--- categories / providers(+services)
-create policy "public read" on public.categories for select using (active or is_admin());
-create policy "admin write" on public.categories for all using (is_admin());
-create policy "public read approved" on public.providers for select using (status = 'approved' or is_admin() or profile_id = auth.uid());
-create policy "owner insert" on public.providers for insert with check (profile_id = auth.uid());
-create policy "owner update" on public.providers for update using (profile_id = auth.uid());
-create policy "admin write" on public.providers for all using (is_admin());
-create policy "public read" on public.services for select using (true);
-create policy "owner write" on public.services for all using (exists (select 1 from public.providers pr where pr.id = provider_id and pr.profile_id = auth.uid()));
--- requests / messages / reviews / contact
-create policy "parties read" on public.requests for select using (is_party() or is_admin());
-create policy "client insert" on public.requests for insert with check (client_id = auth.uid());
-create policy "parties update" on public.requests for update using (is_party() or is_admin());
-create policy "party read" on public.messages for select using (is_msg_party() or is_admin());
-create policy "party insert" on public.messages for insert with check (is_msg_party());
-create policy "public read visible" on public.reviews for select using (visible or client_id = auth.uid() or is_admin());
-create policy "client insert" on public.reviews for insert with check (client_id = auth.uid());
-create policy "admin update" on public.reviews for update using (is_admin());
-create policy "any insert" on public.contact_messages for insert with check (true);
--- fonctions utilitaires
-create or replace function public.is_admin() returns boolean language sql stable as
+create or replace function public.is_admin() returns boolean
+language sql stable security definer set search_path = public as
 $$ select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin' and not suspended) $$;
-create or replace function public.is_party() returns boolean language sql stable as
-$$ select exists (select 1 from public.requests r join public.providers pr on pr.id = r.provider_id
-   where r.id = (select id from public.requests limit 1) and (r.client_id = auth.uid() or pr.profile_id = auth.uid())) $$;
--- is_msg_party() : même principe, paramétré sur messages.request_id
-```
 
-(Écrire `is_msg_party()` sur le même modèle que `is_party()`, en ciblant `request_id` de la ligne courante.)
+create or replace function public.is_provider_owner(p_provider uuid) returns boolean
+language sql stable security definer set search_path = public as
+$$ select exists (select 1 from public.providers where id = p_provider and profile_id = auth.uid()) $$;
+
+create or replace function public.is_request_party(p_request uuid) returns boolean
+language sql stable security definer set search_path = public as
+$$ select exists (select 1 from public.requests r where r.id = p_request
+   and (r.client_id = auth.uid() or is_provider_owner(r.provider_id))) $$;
+
+alter table public.profiles enable row level security;
+alter table public.categories enable row level security;
+alter table public.providers enable row level security;
+alter table public.services enable row level security;
+alter table public.requests enable row level security;
+alter table public.messages enable row level security;
+alter table public.reviews enable row level security;
+alter table public.contact_messages enable row level security;
+
+create policy "profiles read all" on public.profiles for select using (true);
+create policy "profiles update self" on public.profiles for update using (auth.uid() = id);
+create policy "profiles admin all" on public.profiles for all using (is_admin());
+
+create policy "categories public read" on public.categories for select using (active or is_admin());
+create policy "categories admin write" on public.categories for all using (is_admin());
+
+create policy "providers public read approved" on public.providers for select
+  using (status = 'approved' or profile_id = auth.uid() or is_admin());
+create policy "providers owner insert" on public.providers for insert with check (profile_id = auth.uid());
+create policy "providers owner update" on public.providers for update using (profile_id = auth.uid());
+create policy "providers admin all" on public.providers for all using (is_admin());
+
+create policy "services public read" on public.services for select using (true);
+create policy "services owner write" on public.services for all using (is_provider_owner(provider_id));
+
+create policy "requests party read" on public.requests for select using (is_request_party(id) or is_admin());
+create policy "requests client insert" on public.requests for insert with check (client_id = auth.uid());
+create policy "requests party update" on public.requests for update using (is_request_party(id) or is_admin());
+
+create policy "messages party read" on public.messages for select using (is_request_party(request_id) or is_admin());
+create policy "messages party insert" on public.messages for insert with check (is_request_party(request_id));
+
+create policy "reviews read" on public.reviews for select using (visible or client_id = auth.uid() or is_admin());
+create policy "reviews client insert" on public.reviews for insert with check (client_id = auth.uid());
+create policy "reviews admin update" on public.reviews for update using (is_admin());
+
+create policy "contact insert" on public.contact_messages for insert with check (true);
+```
 
 `tools/export-seed.mjs` : importe `seedState` depuis `../assets/js/core/seed.js`, imprime sur stdout un SQL d'insert idempotent (`insert into public.categories … on conflict (slug) do nothing`, etc. ; pour `profiles` démo, utiliser des UUID fixes du seed) avec les dates converties en `timestamptz`. Générer : `node tools/export-seed.mjs > supabase/seed.sql`, puis vérifier visuellement le fichier produit (colonnes snake_case conformes au schéma).
 
@@ -1187,10 +1205,13 @@ async function render() {
   const list = await db.listProviders({ ...state });
   document.querySelector('#results-meta').textContent = `${list.length} prestataire${list.length > 1 ? 's' : ''} trouvé${list.length > 1 ? 's' : ''}`;
   document.querySelector('#empty').hidden = list.length > 0;
-  grid.innerHTML = list.map(p => `<!-- même carte que home.js (extraire une fonction cardHTML(p) dans ui.js si duplication gênante) -->`).join('');
+  grid.innerHTML = list.map(providerCardHTML).join('');
   initReveal(grid);
 }
 render();
+```
+
+**Ruling R2 (anti-duplication, obligatoire) :** créer dans `assets/js/core/ui.js` la fonction exportée `providerCardHTML(p)` (le HTML exact de la carte prestataire présent dans `assets/js/pages/home.js`, qui doit utiliser `esc`, `icon`, `renderStars`, `formatFCFA`) et la brancher ici. Réusinage immédiat : remplacer le template inline de `home.js` par un appel à `providerCardHTML` et importer la fonction. Les deux pages partagent désormais une seule source de vérité pour la carte.
 ```
 
 Synchroniser l'URL (`history.replaceState`) à chaque rendu pour que les filtres soient partageables. Débattre la recherche texte (input « 300 ms ») pour éviter un appel par frappe.
