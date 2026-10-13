@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Page introuvable (404) — Eventis</title>
+  <meta name="description" content="La page que vous cherchez n'existe pas ou a été déplacée. Retrouvez votre chemin depuis l'accueil ou le catalogue Eventis.">
+  <meta name="robots" content="noindex">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('eventis_theme')||''}catch(e){}</script>
+  <link rel="stylesheet" href="/assets/css/fonts.css">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/components.css">
+  <style>
+    /* Page 404 (aussi servie en repli par tools/serve.js) — liens en racine absolue impérativement */
+    .nf { min-height: 62vh; display: flex; align-items: center; text-align: center; }
+    .nf__actions { display: flex; gap: var(--space-3); flex-wrap: wrap; justify-content: center; margin-top: var(--space-5); }
+  </style>
+  <script src="/assets/vendor/gsap.min.js" defer></script>
+  <script src="/assets/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="/assets/vendor/supabase-js.min.js" defer></script>
+  <script src="/assets/js/core/auth-supabase.js" defer></script>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main id="main">
+    <section class="section nf">
+      <div class="container">
+        <p class="muted">Erreur 404</p>
+        <h1>Cette page s'est égarée</h1>
+        <p>La page que vous cherchez n'existe pas ou a été déplacée.</p>
+        <div class="nf__actions">
+          <a class="btn btn--primary" href="/">Retour à l'accueil</a>
+          <a class="btn btn--outline" href="/catalogue.html">Parcourir le catalogue</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer id="site-footer"></footer>
+  <script type="module" src="/assets/js/pages/static-steps.js"></script>
+</body>
+</html>

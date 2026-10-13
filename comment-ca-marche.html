@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Comment ça marche — Eventis</title>
+  <meta name="description" content="Comment fonctionne Eventis : trouvez un prestataire événementiel à Lomé, comparez les tarifs et avis, contactez-le en toute confiance. Inscription client ou prestataire.">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('eventis_theme')||''}catch(e){}</script>
+  <link rel="stylesheet" href="/assets/css/fonts.css">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/components.css">
+  <!-- .steps / .section--alt / .cta vivent dans home.css (source unique, même précédent que catalogue.html) -->
+  <link rel="stylesheet" href="/assets/css/pages/home.css">
+  <style>
+    /* Pages statiques — ajustements minimaux, tokens uniquement */
+    .steps--plain strong::first-letter { color: inherit; }
+    .cta__row { display: flex; gap: var(--space-3); flex-wrap: wrap; justify-content: center; }
+  </style>
+  <script src="/assets/vendor/gsap.min.js" defer></script>
+  <script src="/assets/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="/assets/vendor/supabase-js.min.js" defer></script>
+  <script src="/assets/js/core/auth-supabase.js" defer></script>
+</head>
+<body data-nav-active="guide">
+  <header id="site-header"></header>
+  <main id="main">
+    <section class="section">
+      <div class="container">
+        <h1>Comment ça marche</h1>
+        <p class="muted">Eventis vous met en relation avec les meilleurs prestataires événementiels du Togo. Simple, transparent et gratuit.</p>
+      </div>
+    </section>
+    <section class="section section--alt">
+      <div class="container">
+        <h2>Trois parcours, une seule plateforme</h2>
+        <ol class="steps steps--plain">
+          <li data-reveal>
+            <strong>Vous cherchez</strong>
+            <p>Décrivez votre événement : type, date, lieu et budget.</p>
+            <p>Parcourez le catalogue et comparez tarifs, réalisations et avis.</p>
+            <p>Envoyez une demande de devis au prestataire de votre choix.</p>
+          </li>
+          <li data-reveal>
+            <strong>Vous êtes prestataire</strong>
+            <p>Créez votre compte et présentez votre activité : services, tarifs, photos.</p>
+            <p>Votre profil est vérifié par notre équipe avant d'être publié.</p>
+            <p>Recevez des demandes de clients qualifiés et répondez-leur directement.</p>
+          </li>
+          <li data-reveal>
+            <strong>Sécurité &amp; confiance</strong>
+            <p>Les profils sont vérifiés par l'équipe Eventis avant publication.</p>
+            <p>Les avis proviennent de clients après une demande clôturée.</p>
+            <p>La messagerie intégrée protège vos coordonnées au premier contact.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+    <section class="section">
+      <div class="container">
+        <h2>Un paiement simple et transparent</h2>
+        <div class="card" data-reveal>
+          <div class="card__body">
+            <p>Le paiement se fait directement entre vous et le prestataire (Flooz, TMoney, espèces). Eventis ne gère aucun paiement pour le moment.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="section cta">
+      <div class="container cta__inner" data-reveal>
+        <h2>Prêt·e à vous lancer ?</h2>
+        <p>Créez votre compte gratuit et rejoignez la communauté Eventis.</p>
+        <div class="cta__row">
+          <a class="btn btn--primary" href="/auth/inscription.html?role=client">S'inscrire comme client</a>
+          <a class="btn btn--primary" href="/auth/inscription.html?role=prestataire">Devenir prestataire</a>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer id="site-footer"></footer>
+  <script type="module" src="/assets/js/pages/static-steps.js"></script>
+</body>
+</html>
