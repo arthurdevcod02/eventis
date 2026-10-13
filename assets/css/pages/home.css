@@ -34,7 +34,6 @@
   background: transparent; border: 0; padding: 12px 14px; min-height: 48px; min-width: 0; }
 .hero__search select { flex: 0 1 220px; }
 .hero__search input { flex: 1 1 auto; }
-.hero__search select:focus, .hero__search input:focus { outline: none; }
 .hero__search .btn { flex: none; }
 
 .hero__stats { margin-top: var(--space-6); display: flex; flex-wrap: wrap;
