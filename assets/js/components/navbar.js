@@ -90,21 +90,26 @@ export function mountNavbar(active = '') {
         toast('Vous êtes déconnecté·e.', 'success');
       }));
 
-    // Menu compte (bureau)
-    const accountBtn = header.querySelector('.nav__account-btn');
-    const menu = header.querySelector('.nav__menu');
-    if (accountBtn && menu) {
-      accountBtn.addEventListener('click', () => {
+    // Menu compte (bureau + mobile : le bloc auth est rendu deux fois, il faut brancher les deux)
+    const accountPairs = [...header.querySelectorAll('.nav__account')]
+      .map(block => ({ btn: block.querySelector('.nav__account-btn'), menu: block.querySelector('.nav__menu') }))
+      .filter(p => p.btn && p.menu);
+    accountPairs.forEach(({ btn, menu }) => {
+      btn.addEventListener('click', () => {
         const open = menu.hasAttribute('hidden');
         if (open) menu.removeAttribute('hidden'); else menu.setAttribute('hidden', '');
-        accountBtn.setAttribute('aria-expanded', String(open));
+        btn.setAttribute('aria-expanded', String(open));
       });
+    });
+    if (accountPairs.length) {
       if (onDocClick) document.removeEventListener('click', onDocClick);
       onDocClick = e => {
-        if (!menu.hasAttribute('hidden') && !menu.contains(e.target) && !accountBtn.contains(e.target)) {
-          menu.setAttribute('hidden', '');
-          accountBtn.setAttribute('aria-expanded', 'false');
-        }
+        accountPairs.forEach(({ btn, menu }) => {
+          if (!menu.hasAttribute('hidden') && !menu.contains(e.target) && !btn.contains(e.target)) {
+            menu.setAttribute('hidden', '');
+            btn.setAttribute('aria-expanded', 'false');
+          }
+        });
       };
       document.addEventListener('click', onDocClick);
     }
