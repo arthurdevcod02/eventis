@@ -110,6 +110,7 @@ export const SEED_MESSAGES = [
   { id: 'm5', requestId: 'r2', senderId: 'u-own-fiore', body: 'Bonjour, merci pour votre demande. Nous vous envoyons notre catalogue fleurs et un devis sous 48 h.', readAt: daysAgo(1), createdAt: daysAgo(7) },
   { id: 'm6', requestId: 'r3', senderId: 'u-client', body: 'Soirée anniversaire le 24 octobre, recherche DJ avec sono et lumières.', readAt: null, createdAt: daysAgo(2) },
   { id: 'm7', requestId: 'r4', senderId: 'u-kossi', body: 'Baptême le 18 octobre à Bè, buffet pour 120 personnes. Merci de nous faire un devis.', readAt: null, createdAt: daysAgo(1) },
+  { id: 'm8', requestId: 'r2', senderId: 'u-own-fiore', body: 'Bonjour, voici notre catalogue 2026. N’hésitez pas à nous dire vos préférences de couleurs.', readAt: null, createdAt: daysAgo(0) },
 ];
 
 export const SEED_REVIEWS = [
