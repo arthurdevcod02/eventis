@@ -77,6 +77,14 @@
     async getProviderIdFor(userId) {
       return this.db.getProviderIdFor(userId);
     }
+
+    // Mise à jour des métadonnées du compte connecté (nom affiché + téléphone).
+    // L'e-mail reste inchangé : il identifie le compte et sert à la connexion.
+    async updateProfile({ fullName, phone }) {
+      const { error } = await this.client.auth.updateUser({ data: { full_name: fullName, phone } });
+      if (error) throw new Error(error.message);
+      return this.current();
+    }
   }
 
   window.EventisAuthSupabase = { AuthSupabase };

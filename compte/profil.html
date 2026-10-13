@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Profil — Eventis</title>
+  <meta name="description" content="Gérez vos informations personnelles Eventis : nom et numéro de téléphone.">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('eventis_theme')||''}catch(e){}</script>
+  <link rel="stylesheet" href="/assets/css/fonts.css">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/components.css">
+  <link rel="stylesheet" href="/assets/css/pages/account.css">
+  <script src="/assets/vendor/gsap.min.js" defer></script>
+  <script src="/assets/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="/assets/vendor/supabase-js.min.js" defer></script>
+  <script src="/assets/js/core/auth-supabase.js" defer></script>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main id="main">
+    <section class="section">
+      <div class="container">
+        <nav class="tabs" aria-label="Espace client">
+          <a href="/compte/">Tableau de bord</a>
+          <a href="/compte/demandes.html">Mes demandes</a>
+          <a href="/compte/profil.html" aria-current="page">Profil</a>
+        </nav>
+        <div class="account-head">
+          <h1>Profil</h1>
+          <p class="muted">Vos informations personnelles.</p>
+        </div>
+        <div class="profile-grid">
+          <div class="profile-card">
+            <h2>Informations du compte</h2>
+            <form id="profile-form" action="#" method="post">
+              <div class="field">
+                <label for="p-name">Nom complet</label>
+                <input id="p-name" name="fullName" type="text" autocomplete="name" required maxlength="120">
+              </div>
+              <div class="field">
+                <label for="p-phone">Téléphone</label>
+                <input id="p-phone" name="phone" type="tel" autocomplete="tel" placeholder="+228 90 00 00 00">
+              </div>
+              <div class="field">
+                <label for="p-email">E-mail</label>
+                <input id="p-email" name="email" type="email" readonly>
+                <p class="muted field__hint">L'e-mail ne peut pas être modifié.</p>
+              </div>
+              <button class="btn btn--primary" type="submit">Enregistrer mes modifications</button>
+            </form>
+          </div>
+          <div class="danger-zone" id="danger-zone">
+            <h2>Zone de danger</h2>
+            <p id="danger-text"></p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer id="site-footer"></footer>
+  <script type="module" src="/assets/js/pages/account-profile.js"></script>
+</body>
+</html>

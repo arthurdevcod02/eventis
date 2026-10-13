@@ -1,0 +1,118 @@
+/* Espace client Eventis — tableau de bord (.dashboard), sous-navigation (.tabs),
+   liste des demandes (.request-list) et vue détail (.request-detail), avis, profil. */
+
+.account-head { margin-bottom: var(--space-5); }
+.account-head h1 { font-size: clamp(1.6rem, 4vw, 2.2rem); }
+.account-head .muted { margin-top: var(--space-1); }
+
+/* Skeletons de chargement (hauteurs dédiées, en attendant le rendu JS) */
+.skeleton--hero { height: 120px; }
+.skeleton--card { height: 96px; }
+.field__hint { font-size: .8rem; }
+
+/* Sous-navigation d'espace connecté (aucun onglet de la navbar publique actif) */
+.tabs { display: flex; gap: var(--space-1); border-bottom: 1px solid var(--border); margin-bottom: var(--space-6); }
+.tabs a { display: inline-flex; align-items: center; min-height: 44px; padding: 8px var(--space-4);
+  text-decoration: none; font-weight: 600; color: var(--text-muted);
+  border-bottom: 3px solid transparent; margin-bottom: -1px; transition: color .2s; }
+.tabs a:hover { color: var(--text); }
+.tabs a[aria-current="page"] { color: var(--color-orange); border-bottom-color: var(--color-orange); }
+
+/* --- Tableau de bord ------------------------------------------------------- */
+.dashboard { display: grid; gap: var(--space-5); }
+
+/* Bandeau de bienvenue */
+.dashboard__welcome { background: var(--bg-alt); border: 1px solid var(--border); border-radius: var(--radius-lg);
+  padding: var(--space-6); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: var(--space-4); }
+.dashboard__welcome h2 { font-size: clamp(1.4rem, 3.5vw, 1.9rem); }
+.dashboard__welcome .muted { margin-top: var(--space-1); max-width: 46ch; }
+
+/* 3 cartes compteurs */
+.dashboard__stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-4); }
+.stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: var(--space-5); display: grid; gap: var(--space-1); align-content: start; }
+.stat-card__icon { display: inline-flex; color: var(--color-orange); }
+.stat-card__value { font-family: var(--font-title); font-size: 2rem; font-weight: 800; line-height: 1.1; }
+.stat-card__label { color: var(--text-muted); font-size: .9rem; }
+
+/* Section « dernières demandes » */
+.dashboard__section-head { display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-3); flex-wrap: wrap; margin-top: var(--space-2); }
+.dashboard__section-head h2 { font-size: 1.25rem; }
+.dashboard__all { display: inline-flex; align-items: center; gap: 6px; min-height: 44px;
+  font-weight: 600; color: var(--color-orange); text-decoration: none; }
+.dashboard__all:hover { color: var(--color-orange-hover); }
+
+/* --- Liste des demandes (dashboard + page demandes) ------------------------- */
+.request-list { display: grid; gap: var(--space-3); }
+.request-card { display: grid; gap: var(--space-2); width: 100%; text-align: left;
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: var(--space-4); color: inherit; text-decoration: none; transition: border-color .2s, box-shadow .2s; }
+button.request-card { cursor: pointer; font: inherit; }
+.request-card:hover { border-color: var(--color-orange); box-shadow: var(--shadow-md); }
+.request-card__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
+.request-card__title { font-family: var(--font-title); font-weight: 700; font-size: 1.05rem; min-width: 0;
+  overflow-wrap: anywhere; }
+.request-card__meta { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4);
+  color: var(--text-muted); font-size: .875rem; }
+.request-card__last { color: var(--text-muted); font-size: .875rem; min-width: 0; overflow-wrap: anywhere; }
+
+/* --- Vue détail d'une demande ---------------------------------------------- */
+.request-detail { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: var(--space-5); display: grid; gap: var(--space-4); }
+.request-detail[hidden] { display: none; }
+.request-detail__head { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  flex-wrap: wrap; }
+.request-detail__head h2 { font-size: 1.25rem; min-width: 0; overflow-wrap: anywhere; }
+.request-detail__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: var(--space-3); }
+.request-detail__item { background: var(--bg-alt); border-radius: var(--radius-sm); padding: var(--space-3); }
+.request-detail__item dt { color: var(--text-muted); font-size: .8rem; margin-bottom: 2px; }
+.request-detail__item dd { font-weight: 600; overflow-wrap: anywhere; }
+.request-detail__item a { color: var(--color-orange); }
+.request-detail__message { border-left: 3px solid var(--color-orange); padding-left: var(--space-4);
+  color: var(--text-muted); overflow-wrap: anywhere; }
+.request-detail__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+
+/* Boîte de confirmation (clôture) */
+.confirm-box { border: 1px dashed var(--border); border-radius: var(--radius-sm); background: var(--bg-alt);
+  padding: var(--space-4); display: grid; gap: var(--space-3); max-width: 560px; }
+.confirm-box__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+
+/* --- Formulaire d'avis ------------------------------------------------------ */
+.review-form { display: grid; gap: var(--space-4); max-width: 560px; }
+.review-form__note { display: grid; gap: var(--space-2); }
+.review-form__note legend, .review-form__note > span { font-weight: 600; font-size: .9rem; }
+
+/* Étoiles cliquables (boutons aria-pressed, accessibles au clavier) */
+.rating { display: flex; gap: var(--space-1); }
+.rating__star { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
+  border: 0; background: none; padding: 0; color: var(--border); transition: color .15s, transform .15s; }
+.rating__star:hover { color: var(--color-orange-hover); transform: scale(1.08); }
+.rating__star.is-on { color: var(--color-orange); }
+
+.review-ok { border: 1px solid rgba(22,163,74,.4); background: rgba(22,163,74,.08); border-radius: var(--radius-sm);
+  padding: var(--space-4); display: grid; gap: var(--space-1); max-width: 560px; }
+
+/* --- Profil ----------------------------------------------------------------- */
+.profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-5); align-items: start; }
+.profile-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: var(--space-5); }
+.profile-card h2 { font-size: 1.2rem; margin-bottom: var(--space-4); }
+.profile-card .field [readonly] { background: var(--bg-alt); color: var(--text-muted); }
+
+/* Zone danger (suppression de compte) — honnête, sans bouton inerte */
+.danger-zone { border: 1px solid rgba(220,38,38,.4); background: rgba(220,38,38,.05);
+  border-radius: var(--radius-md); padding: var(--space-5); }
+.danger-zone h2 { font-size: 1.1rem; color: #B91C1C; margin-bottom: var(--space-2); }
+[data-theme="dark"] .danger-zone h2 { color: #F87171; }
+.danger-zone p { font-size: .9rem; }
+.danger-zone a { color: var(--color-orange); font-weight: 600; }
+
+/* --- Responsive --------------------------------------------------------------- */
+@media (max-width: 760px) {
+  .dashboard__stats { grid-template-columns: 1fr; }
+  .profile-grid { grid-template-columns: 1fr; }
+  .tabs { overflow-x: auto; }
+}

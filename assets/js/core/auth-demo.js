@@ -104,6 +104,20 @@ export class DemoAuth {
     return state.providers.find(p => p.ownerId === userId)?.id ?? null;
   }
 
+  // Mise à jour du profil du compte connecté (nom affiché + téléphone). L'e-mail reste
+  // inchangé : il identifie le compte et sert à la connexion.
+  async updateProfile({ fullName, phone }) {
+    const state = this._state();
+    const id = this.storage.getItem(SESSION_KEY);
+    const u = id ? state.users.find(x => x.id === id) : null;
+    if (!u) throw new Error('Aucun compte connecté.');
+    if (typeof fullName === 'string' && fullName.trim()) u.fullName = fullName.trim();
+    if (typeof phone === 'string') u.phone = phone.trim();
+    this._save(state);
+    this._notify();
+    return this._public(u);
+  }
+
   // tests uniquement — suspend un compte par e-mail sans passer par l'admin
   async suspendForTest(email) {
     const state = this._state();
