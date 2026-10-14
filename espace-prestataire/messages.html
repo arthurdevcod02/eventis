@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Messages — Eventis</title>
+  <meta name="description" content="Vos conversations avec les clients Eventis : échanges par demande de devis, en un seul endroit.">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('eventis_theme')||''}catch(e){}</script>
+  <link rel="stylesheet" href="/assets/css/fonts.css">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/components.css">
+  <link rel="stylesheet" href="/assets/css/components/messaging.css">
+  <link rel="stylesheet" href="/assets/css/pages/account.css">
+  <link rel="stylesheet" href="/assets/css/pages/provider.css">
+  <script src="/assets/vendor/gsap.min.js" defer></script>
+  <script src="/assets/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="/assets/vendor/supabase-js.min.js" defer></script>
+  <script src="/assets/js/core/auth-supabase.js" defer></script>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main id="main">
+    <section class="section">
+      <div class="container">
+        <nav class="tabs" aria-label="Espace prestataire">
+          <a href="/espace-prestataire/">Accueil</a>
+          <a href="/espace-prestataire/demandes.html">Demandes</a>
+          <a href="/espace-prestataire/services.html">Services</a>
+          <a href="/espace-prestataire/profil.html">Profil</a>
+          <a href="/espace-prestataire/messages.html" aria-current="page">Messages</a>
+        </nav>
+        <div class="account-head">
+          <h1>Messages</h1>
+          <p class="muted">Échangez avec les clients qui vous ont contacté pour leur événement.</p>
+        </div>
+        <div id="messaging">
+          <p class="skeleton skeleton--card" aria-hidden="true"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer id="site-footer"></footer>
+  <script type="module" src="/assets/js/pages/provider-messages.js"></script>
+</body>
+</html>
