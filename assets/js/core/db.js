@@ -307,6 +307,21 @@ export class DemoAdapter {
         clientName: this._user(state, v.clientId)?.fullName ?? '', createdAt: v.createdAt }));
   }
 
+  // File de modération admin : TOUS les avis (publiés et non publiés), les
+  // non publiés en tête puis createdAt décroissant — la file à traiter arrive
+  // donc en premier sans filtrage côté UI.
+  async listReviewsAdmin() {
+    const state = this._load();
+    return state.reviews
+      .map(v => ({ id: v.id, requestId: v.requestId ?? null, clientId: v.clientId,
+        providerId: v.providerId, rating: v.rating, comment: v.comment,
+        visible: !!v.visible, createdAt: v.createdAt,
+        clientName: this._user(state, v.clientId)?.fullName ?? '',
+        providerName: this._provider(state, v.providerId)?.businessName ?? '' }))
+      .sort((a, b) => Number(a.visible) - Number(b.visible)
+        || b.createdAt.localeCompare(a.createdAt));
+  }
+
   // --- Administration --------------------------------------------------------
   async listProvidersAdmin({ status } = {}) {
     const state = this._load();
@@ -686,6 +701,22 @@ export class SupabaseAdapter {
     if (error) throw new Error(error.message);
     return data.map(v => ({ id: v.id, rating: v.rating, comment: v.comment,
       clientName: v.profiles?.full_name ?? '', createdAt: v.created_at }));
+  }
+
+  // File de modération admin : tous les avis (visibles et non visibles), non publiés
+  // d'abord puis date décroissante. La politique « reviews read » (rls.sql) a un bras
+  // is_admin() : un admin voit les avis masqués sans qu'une politique soit ajoutée.
+  // Double jointure par FK nommée (client → profiles, prestataire → providers).
+  async listReviewsAdmin() {
+    const { data, error } = await this.client.from('reviews')
+      .select('*, client:profiles!reviews_client_id_fkey(full_name), provider:providers!reviews_provider_id_fkey(business_name)')
+      .order('visible', { ascending: true })
+      .order('created_at', { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(v => ({ id: v.id, requestId: v.request_id ?? null,
+      clientId: v.client_id, providerId: v.provider_id, rating: v.rating, comment: v.comment,
+      visible: !!v.visible, createdAt: v.created_at,
+      clientName: v.client?.full_name ?? '', providerName: v.provider?.business_name ?? '' }));
   }
 
   async listProvidersAdmin({ status } = {}) {

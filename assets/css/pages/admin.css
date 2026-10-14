@@ -1,0 +1,108 @@
+/* Administration Eventis — graphique d'inscriptions (.bar-chart), tableaux
+   (.table-wrap / caption), barre d'outils (.admin-toolbar), file de modération
+   (.review-queue) et panneau « à traiter » (.admin-todo).
+   Couleurs : uniquement les variables de tokens.css (aucun hexadécimal en dur). */
+
+/* --- Bandeaux de page ------------------------------------------------------ */
+.admin-section { display: grid; gap: var(--space-5); }
+.admin-section h2 { font-size: 1.25rem; }
+.admin-note { color: var(--text-muted); font-size: .9rem; max-width: 72ch; }
+
+/* 4 compteurs (grille de l'espace client, portée à 4 colonnes ici) */
+.admin-section .dashboard__stats { grid-template-columns: repeat(4, 1fr); }
+
+/* Panneau « à traiter » (compteurs réels, aucun lien décoratif) */
+.admin-todo { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: var(--space-5); display: grid; gap: var(--space-3); }
+.admin-todo h2 { font-size: 1.1rem; }
+.admin-todo__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
+.admin-todo__link { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  min-height: 44px; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm);
+  border: 1px solid var(--border); text-decoration: none; color: inherit; font-weight: 600;
+  transition: border-color .2s, color .2s; }
+.admin-todo__link:hover { border-color: var(--color-orange); color: var(--color-orange); }
+.admin-todo__count { font-family: var(--font-title); font-weight: 800; color: var(--color-orange); }
+.admin-todo__empty { color: var(--text-muted); font-size: .9rem; }
+
+/* --- Graphique des inscriptions (30 derniers jours) ------------------------- */
+.chart-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: var(--space-5); display: grid; gap: var(--space-4); }
+.chart-card__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between;
+  gap: var(--space-3); }
+.chart-card__head h2 { font-size: 1.15rem; }
+.chart-card__total { color: var(--text-muted); font-size: .9rem; }
+
+/* 30 colonnes : chaque colonne est une piste gris clair, la barre est pleine
+   uniquement les jours avec des inscriptions (état vide honnête). */
+.bar-chart { display: flex; align-items: flex-end; gap: 3px; height: 160px; }
+.bar-chart__col { flex: 1 1 0; min-width: 5px; display: flex; flex-direction: column;
+  justify-content: flex-end; height: 100%; background: var(--bg-alt); border-radius: 3px; }
+.bar-chart__bar { display: block; width: 100%; border-radius: 3px 3px 0 0; background: var(--color-orange); }
+.bar-chart__bar:hover { background: var(--color-orange-hover); }
+.bar-chart__bar.is-empty { background: transparent; }
+.bar-chart__bar.is-empty:hover { background: transparent; }
+.bar-chart__scale { display: flex; justify-content: space-between; gap: var(--space-3);
+  color: var(--text-muted); font-size: .8rem; }
+
+/* --- Tableaux --------------------------------------------------------------- */
+/* Défilement horizontal sur petit écran : le tableau reste entier, la légende
+   (caption) reste visible. La zone est défilable au clavier (tabindex + role). */
+.table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); }
+.table-wrap .table { min-width: 760px; margin-bottom: 0; }
+.table__caption { caption-side: top; text-align: left; padding: var(--space-4); color: var(--text-muted);
+  font-size: .85rem; border-bottom: 1px solid var(--border); }
+.table .cell-title { font-weight: 700; }
+.table .cell-title a { color: inherit; text-decoration: none; }
+.table .cell-title a:hover { color: var(--color-orange); }
+.table__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+/* Les boutons d'action de tableau gardent la hauteur minimale de 44 px
+   (base.css) et seules la casse et la graisse changent. */
+.table .btn { font-size: .875rem; padding: 8px 14px; }
+.table .badge { white-space: nowrap; }
+.table .none { color: var(--text-muted); }
+
+/* --- Barre d'outils (filtres, ajout) ---------------------------------------- */
+.admin-toolbar { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between;
+  gap: var(--space-4); }
+.admin-toolbar .field { margin-bottom: 0; min-width: 220px; }
+.admin-results { color: var(--text-muted); font-size: .9rem; }
+
+/* --- File de modération des avis -------------------------------------------- */
+.review-queue { display: grid; gap: var(--space-3); }
+.review-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: var(--space-4); display: grid; gap: var(--space-2); }
+.review-item--pending { border-left: 4px solid var(--color-orange); }
+.review-item__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: var(--space-3); }
+.review-item__title { font-family: var(--font-title); font-weight: 700; font-size: 1.05rem;
+  min-width: 0; overflow-wrap: anywhere; }
+.review-item__title a { color: inherit; text-decoration: none; }
+.review-item__title a:hover { color: var(--color-orange); }
+.review-item__meta { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4);
+  color: var(--text-muted); font-size: .875rem; }
+.review-item__text { color: var(--text); overflow-wrap: anywhere; }
+.review-item__actions { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+
+/* --- Catégories : icône (aperçu cellulaire + formulaire) -------------------- */
+.cat-icon { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--text); }
+.cat-icon__glyph { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-alt);
+  color: var(--color-orange); flex: none; }
+.cat-form__preview { display: flex; align-items: center; gap: var(--space-3); }
+.cat-form .slug-hint { font-size: .8rem; color: var(--text-muted); }
+
+@media (max-width: 900px) {
+  /* La règle mobile de pages/account.css (1 colonne) est dépassée ici par une
+     grille dédiée à 4 compteurs : 2 colonnes en tablette, 1 en téléphone. */
+  .admin-section .dashboard__stats { grid-template-columns: 1fr 1fr; }
+}
+
+@media (max-width: 760px) {
+  .bar-chart { height: 120px; }
+  .admin-toolbar .field { min-width: 100%; }
+}
+
+@media (max-width: 560px) {
+  .admin-section .dashboard__stats { grid-template-columns: 1fr; }
+}

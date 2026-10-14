@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Administration — Eventis</title>
+  <meta name="description" content="Tableau de bord Eventis : prestataires, utilisateurs, modération des avis et catégories.">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('eventis_theme')||''}catch(e){}</script>
+  <link rel="stylesheet" href="/assets/css/fonts.css">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/components.css">
+  <link rel="stylesheet" href="/assets/css/pages/account.css">
+  <link rel="stylesheet" href="/assets/css/pages/admin.css">
+  <script src="/assets/vendor/gsap.min.js" defer></script>
+  <script src="/assets/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="/assets/vendor/supabase-js.min.js" defer></script>
+  <script src="/assets/js/core/auth-supabase.js" defer></script>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main id="main">
+    <section class="section">
+      <div class="container">
+        <nav class="tabs" aria-label="Administration">
+          <a href="/admin/" aria-current="page">Tableau de bord</a>
+          <a href="/admin/prestataires.html">Prestataires</a>
+          <a href="/admin/utilisateurs.html">Utilisateurs</a>
+          <a href="/admin/avis.html">Avis</a>
+          <a href="/admin/categories.html">Catégories</a>
+        </nav>
+        <div class="account-head">
+          <h1>Tableau de bord</h1>
+          <p class="muted">Chiffres réels de la plateforme, sur les 30 derniers jours.</p>
+        </div>
+        <div id="admin-home" class="admin-section" aria-live="polite">
+          <p class="skeleton skeleton--hero" aria-hidden="true"></p>
+          <p class="skeleton skeleton--hero" aria-hidden="true"></p>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer id="site-footer"></footer>
+  <script type="module" src="/assets/js/pages/admin-home.js"></script>
+</body>
+</html>

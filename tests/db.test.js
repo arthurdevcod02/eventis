@@ -107,3 +107,53 @@ test('stats et contact', async () => {
   assert.ok(s.signupsSeries.length === 30);
   await db.saveContactMessage({ name: 'Test', email: 't@t.tg', message: 'Bonjour' });
 });
+
+// Ruling R14 — listReviewsAdmin est consommé par la file de modération admin (T11).
+// Verrouillés ici : contenu (v6 non publié, ruling R15), ordre (non publiés d'abord),
+// tri createdAt décroissant à l'intérieur de chaque groupe, jointures de noms.
+test('admin: listReviewsAdmin — non publiés d\'abord, tri date décroissante, noms joints', async () => {
+  const db = makeDb();
+  const all = await db.listReviewsAdmin();
+  assert.equal(all.length, 6); // tous les avis de la graine, publiés ou non
+  assert.ok(all.some(v => v.id === 'v6' && v.visible === false));
+  const v6 = all.find(v => v.id === 'v6');
+  assert.equal(v6.clientName, 'Ayaba Kpodar');
+  assert.equal(v6.providerName, 'Lumen Studio');
+  assert.equal(v6.requestId, null);
+  assert.equal(v6.rating, 4);
+  assert.equal(typeof v6.comment, 'string');
+  // Champs conservés pour la modération (aucun perdu au passage).
+  for (const k of ['id', 'requestId', 'clientId', 'providerId', 'rating', 'comment', 'visible', 'createdAt']) {
+    assert.ok(k in v6, `champ manquant : ${k}`);
+  }
+  // File : les non publiés forment un bloc en tête, les publiés un bloc en suite.
+  const unpublished = all.filter(v => !v.visible);
+  const firstPublished = all.findIndex(v => v.visible);
+  assert.equal(unpublished.length, firstPublished);
+  assert.ok(all.slice(firstPublished).every(v => v.visible));
+  // Tri createdAt décroissant dans chaque groupe.
+  const sortedDesc = list => {
+    for (let i = 1; i < list.length; i++) assert.ok(list[i - 1].createdAt >= list[i].createdAt);
+  };
+  sortedDesc(all.slice(0, firstPublished));
+  sortedDesc(all.slice(firstPublished));
+  // Jointure aussi sur un avis publié et sur un avis rattaché à une demande.
+  assert.equal(all.find(v => v.id === 'v1').providerName, 'Lumen Studio');
+  assert.equal(all.find(v => v.id === 'v1').clientName, 'Afi Mensah');
+  // Un avis publié masqué par l'admin rejoint la file en tête (non publiés d'abord),
+  // à sa place dans le tri par date : v6 (il y a 1 j) reste devant v1 (il y a 2 j).
+  await db.setReviewVisible('v1', false);
+  assert.deepEqual((await db.listReviewsAdmin()).slice(0, 2).map(v => v.id), ['v6', 'v1']);
+});
+
+// Note M3 — plus strict que le brief : aucun compte admin ne peut être suspendu.
+test('admin: setUserSuspended refuse tout administrateur et masque les suspended du public', async () => {
+  const db = makeDb();
+  await assert.rejects(() => db.setUserSuspended('u-admin', true),
+    /Un administrateur ne peut pas être suspendu\./);
+  assert.equal((await db.listUsersAdmin()).find(u => u.id === 'u-admin').suspended, false);
+  await db.setUserSuspended('u-kossi', true);
+  assert.equal((await db.listUsersAdmin()).find(u => u.id === 'u-kossi').suspended, true);
+  await db.setUserSuspended('u-kossi', false);
+  assert.equal((await db.listUsersAdmin()).find(u => u.id === 'u-kossi').suspended, false);
+});
