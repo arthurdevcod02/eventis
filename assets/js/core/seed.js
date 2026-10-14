@@ -124,6 +124,10 @@ export const SEED_REVIEWS = [
     comment: 'Une décoration de rêve, nos invités en parlent encore !', visible: true, createdAt: daysAgo(5) },
   { id: 'v5', requestId: null, clientId: 'u-client', providerId: 'p-fiore', rating: 5,
     comment: 'Écoute et conseils excellents, devis clair et respecté.', visible: true, createdAt: daysAgo(3) },
+  // Avis en attente de modération : démontre la file d'attente admin sans
+  // dépendre d'un dépôt faits réels (aucun compte démo ne passe par r1 clôturée).
+  { id: 'v6', requestId: null, clientId: 'u-ayaba', providerId: 'p-lumen', rating: 4,
+    comment: 'Belles prestations, mais le montage final est arrivé plus tard que promis.', visible: false, createdAt: daysAgo(1) },
 ];
 
 // Profils synthétiques des propriétaires de prestataires (pas de compte de connexion).
