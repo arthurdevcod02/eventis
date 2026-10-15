@@ -74,7 +74,11 @@ file administrative.
    - [`supabase/seed.sql`](supabase/seed.sql) — jeu de démonstration (facultatif).
 3. Renseigner dans [`assets/js/core/config.js`](assets/js/core/config.js) :
    `SUPABASE_URL` (URL du projet) et `SUPABASE_ANON_KEY` (**clé anonyme**).
-4. Recharger la page : la bannière « Mode démonstration » disparaît, les données viennent de
+4. Dans **Authentication → Sign In / Providers → Email**, **désactiver « Confirm email »**.
+   L'application écrit la ligne `profiles` elle-même juste après l'inscription, et cette
+   écriture suppose une session déjà ouverte. Avec la confirmation d'e-mail activée,
+   l'inscription échoue (le compte existe côté Supabase, mais sans profil).
+5. Recharger la page : la bannière « Mode démonstration » disparaît, les données viennent de
    Supabase. Laisser les deux champs vides ramène au mode démonstration.
 
 `seed.sql` crée aussi les lignes `auth.users` correspondantes (mot de passe `demo1234`), sans
@@ -98,6 +102,11 @@ update public.profiles p set email = u.email from auth.users u where p.id = u.id
 - Un mot de passe oublié en mode démonstration n'envoie aucun e-mail : la page le dit et
   renvoie vers les comptes de démonstration. En mode réel, l'e-mail est envoyé par Supabase
   (configurer l'URL du site dans Authentication → URL Configuration).
+- `supabase/rls.sql` protège aussi les colonnes de modération par deux déclencheurs :
+  `providers.status`, `providers.is_verified`, `profiles.role` et `profiles.suspended`
+  restent inaccessibles à un utilisateur qui n'est pas administrateur. Un prestataire ne peut
+  donc pas approuver sa propre fiche ni se décerner le badge « Vérifié », et un compte ne peut
+  pas se promouvoir admin ni lever sa propre suspension.
 
 ## 4. Mettre en ligne
 
@@ -151,3 +160,6 @@ session, hors ligne).
   connexions lentes), pas des prestations réelles.
 - Le badge « Vérifié » n'est attribué que par l'administrateur ; en mode démonstration, cette
   attribution reste locale au navigateur.
+- Le formulaire de contact enregistre le message (localement en démo, dans `contact_messages`
+  en mode réel), mais **aucun écran d'administration ne les consulte encore** : en mode réel,
+  la lecture se fait depuis la console Supabase.
