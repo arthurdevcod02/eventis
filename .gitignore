@@ -1,3 +1,24 @@
+# Dépendances et caches
 node_modules/
+.cache/
+
+# Secrets et environnement local — jamais publiés
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+
+# Journaux et fichiers temporaires
+*.log
+tmp/
+temp/
+
+# Espace de progression local des agents (notes de travail, rapports jetables)
+.superpowers/
+
+# Fichiers système
 .DS_Store
 Thumbs.db
+desktop.ini
