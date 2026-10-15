@@ -48,6 +48,7 @@ export function mountNavbar(active = '') {
   if (!header) return;
 
   let onDocClick = null; // évite l'empilement des écouteurs document entre re-rendus
+  let onDocKey = null;
 
   const render = () => {
     const user = auth.current();
@@ -113,6 +114,20 @@ export function mountNavbar(active = '') {
         });
       };
       document.addEventListener('click', onDocClick);
+      // Échap ferme le menu du compte et rend le focus au déclencheur (même contrat que
+      // les modales et le panneau mobile) : sans ça, un utilisateur clavier ne pouvait
+      // pas refermer un menu ouvert avec Entrée.
+      if (onDocKey) document.removeEventListener('keydown', onDocKey);
+      onDocKey = e => {
+        if (e.key !== 'Escape') return;
+        accountPairs.forEach(({ btn, menu }) => {
+          if (menu.hasAttribute('hidden')) return;
+          menu.setAttribute('hidden', '');
+          btn.setAttribute('aria-expanded', 'false');
+          btn.focus();
+        });
+      };
+      document.addEventListener('keydown', onDocKey);
     }
 
     // Menu mobile plein écran

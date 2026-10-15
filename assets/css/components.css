@@ -170,6 +170,9 @@
 .nav__menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 220px; background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-md);
   padding: var(--space-2); display: grid; z-index: 60; }
+/* `display: grid` neutralise l'attribut `hidden` : sans cette règle, le menu du compte
+   (Mon espace / Déconnexion) restait affiché en permanence sur les 9 pages connectées. */
+.nav__menu[hidden] { display: none; }
 .nav__menu a, .nav__menu button { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
   padding: 10px 12px; border: 0; background: none; color: var(--text); text-decoration: none;
   border-radius: var(--radius-sm); min-height: 44px; font-weight: 500; }
