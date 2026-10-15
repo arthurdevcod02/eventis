@@ -30,18 +30,30 @@
     async _hydrate() {
       this.client.auth.onAuthStateChange((_event, session) => {
         if (!session?.user) { this._user = null; return; }
-        this._profile(session.user.id).then(p => { this._user = p; }).catch(() => { this._user = null; });
+        this._profileOrNull(session.user.id).then(p => { this._user = p; }).catch(() => { this._user = null; });
       });
       const { data: { session } } = await this.client.auth.getSession();
-      this._user = session?.user ? await this._profile(session.user.id) : null;
+      this._user = session?.user ? await this._profileOrNull(session.user.id) : null;
       return this._user;
+    }
+
+    _mapProfile(row) {
+      return { id: row.id, fullName: row.full_name, email: row.email, phone: row.phone ?? '',
+        role: row.role, suspended: row.suspended };
     }
 
     async _profile(userId) {
       const { data, error } = await this.client.from('profiles').select('*').eq('id', userId).single();
       if (error) throw new Error(error.message);
-      return { id: data.id, fullName: data.full_name, email: data.email, phone: data.phone ?? '',
-        role: data.role, suspended: data.suspended };
+      return this._mapProfile(data);
+    }
+
+    // Ligne absente = null, et non une exception : « aucun profil » (compte qui arrive
+    // par Google) et « Supabase injoignable » sont deux situations différentes, et la
+    // première doit mener à l'écran de choix de rôle, pas à une erreur.
+    async _profileOrNull(userId) {
+      const { data } = await this.client.from('profiles').select('*').eq('id', userId).maybeSingle();
+      return data ? this._mapProfile(data) : null;
     }
 
     async signUp({ fullName, email, phone, password, role }) {
@@ -52,19 +64,71 @@
         throw new Error(error.message);
       }
       const userId = data.user.id;
-      // email est columnné dans public.profiles (I8/R20) : les pages admin
-      // (prestataires, utilisateurs) consomment profiles.email via db.js.
-      const { error: profileError } = await this.client.from('profiles')
-        .insert({ id: userId, full_name: fullName, email, phone: phone ?? '', role });
-      if (profileError) throw new Error(profileError.message);
-      if (role === 'prestataire') {
-        const { error: providerError } = await this.client.from('providers')
-          .insert({ profile_id: userId, business_name: '' });
-        if (providerError) throw new Error(providerError.message);
-      }
+      await this._provision({ id: userId, fullName, email }, role, phone);
       // Connexion directe si la confirmation d'e-mail est désactivée sur le projet.
       try { await this.signIn(email, password); } catch { /* confirmation d'e-mail requise */ }
       return this._user ?? await this._profile(userId);
+    }
+
+    // Écriture du profil et, pour un prestataire, de sa fiche en attente. Une seule
+    // règle pour les deux voies d'entrée : inscription classique et retour Google
+    // (completeSignup). Un compte Google ne peut pas non plus choisir « admin » ici.
+    async _provision({ id, fullName, email }, role, phone = '') {
+      // email est columnné dans public.profiles (I8/R20) : les pages admin
+      // (prestataires, utilisateurs) consomment profiles.email via db.js.
+      const { error: profileError } = await this.client.from('profiles')
+        .insert({ id, full_name: fullName, email: email ?? '', phone: phone ?? '', role });
+      if (profileError) throw new Error(profileError.message);
+      if (role === 'prestataire') {
+        const { error: providerError } = await this.client.from('providers')
+          .insert({ profile_id: id, business_name: '' });
+        if (providerError) throw new Error(providerError.message);
+      }
+    }
+
+    // --- Connexion Google (mode réel uniquement) ----------------------------
+    // Renvoie l'URL de consentement sans quitter la page (skipBrowserRedirect) :
+    // l'appelant n'oriente le navigateur que si Supabase n'a pas répondu une erreur,
+    // sinon le message reste lisible sur place.
+    async signInWithGoogle({ redirectTo } = {}) {
+      const { data, error } = await this.client.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo, skipBrowserRedirect: true },
+      });
+      if (error) throw new Error(error.message || 'La connexion Google est indisponible.');
+      if (!data || !data.url) throw new Error('La connexion Google est indisponible.');
+      return data.url;
+    }
+
+    // Un compte qui arrive par Google a une session mais aucune ligne « profiles » :
+    // le profil est écrit par l'interface, pas par la base (rls.sql, « profiles self
+    // insert »). pendingSignup signale cette attente, completeSignup y met fin.
+    async pendingSignup() {
+      const { data: { session } } = await this.client.auth.getSession();
+      const user = session && session.user;
+      if (!user) return null;
+      if (await this._profileOrNull(user.id)) return null;
+      return { id: user.id, email: user.email ?? '', fullName: this._nameFrom(user) };
+    }
+
+    _nameFrom(user) {
+      const meta = user.user_metadata || {};
+      return meta.full_name || meta.name
+        || (user.email ? String(user.email).split('@')[0] : '')
+        || 'Compte Eventis';
+    }
+
+    async completeSignup({ role } = {}) {
+      if (!['client', 'prestataire'].includes(role)) throw new Error('Rôle invalide.');
+      const pending = await this.pendingSignup();
+      if (!pending) throw new Error('Aucun compte à compléter.');
+      await this._provision(pending, role, '');
+      this._user = await this._profile(pending.id);
+      if (this._user.suspended) {
+        await this.signOut();
+        throw new Error('Compte suspendu.');
+      }
+      return this._user;
     }
 
     async signIn(email, password) {

@@ -92,6 +92,7 @@ externe · ⛔ hors périmètre de la phase 1.
 | Fonctionnalité | État | Détail |
 |---|---|---|
 | Inscription / connexion / déconnexion | ✅ | trois rôles : client, prestataire, administrateur ; redirection vers l'espace du rôle |
+| Connexion « Continuer avec Google » | ⚙️ | bouton sur connexion et inscription, retour OAuth avec **choix du rôle confirmé par l'utilisateur** (client ou prestataire, jamais administrateur) ; code en place et simulé, **jamais exercé contre le vrai fournisseur Google** (voir §7bis) |
 | Gardes de session | ✅ | les 14 pages protégées redirigent sans session ; un client appelé sur `/admin/` revient sur son espace |
 | Mot de passe oublié | ⚙️ | mode démo : **aucun e-mail n'est envoyé**, la page le dit et renvoie vers les comptes de démonstration. Mode réel : e-mail envoyé par Supabase |
 
@@ -203,8 +204,9 @@ normalisés non attribués, photos générées.
 node --test "tests/*.test.js"
 ```
 
-27 tests natifs : couche de données (mode démo), authentification démo, contrat de garde de
-session Supabase, formats français (`Intl`, FCFA, dates).
+48 tests natifs : couche de données (mode démo), authentification démo et contrat OAuth
+(`signInWithGoogle`, profil en attente, complément d'inscription), contrat de garde de session
+Supabase, helpers de redirection Google, formats français (`Intl`, FCFA, dates).
 
 ## 7. Configuration Supabase (mode réel)
 
@@ -248,6 +250,62 @@ non validé** tant que la procédure ci-dessous n'a pas été jouée une fois su
 entre navigateurs, e-mail de réinitialisation de mot de passe, consultation des messages de
 contact ailleurs que dans le navigateur qui les a saisis. Tout le reste fonctionne en démo.
 
+## 7bis. Connexion Google (OAuth) — ce qui est fait, ce qui reste à configurer
+
+**Ce qui est en place dans le code**
+
+- Bouton **« Continuer avec Google »** sur [`auth/connexion.html`](auth/connexion.html) et
+  [`auth/inscription.html`](auth/inscription.html), à côté de la connexion e-mail/mot de passe
+  (inchangée). La connexion classique reste le chemin principal ; Google s'y ajoute.
+- [`assets/js/core/oauth.js`](assets/js/core/oauth.js) porte les helpers sans DOM : URL de retour
+  calculée depuis `location.origin` (la même ligne fonctionne en local et en production, sans
+  constante d'environnement), contrôle anti-redirection ouverte (`safeNext` : chemins internes
+  uniquement), intention de retour conservée en `sessionStorage`, et messages d'erreur français
+  pour les pannes réellement observables (fournisseur non activé, URL de retour refusée, Supabase
+  injoignable).
+- Le rôle **n'est jamais attribué automatiquement** : au retour de Google, si aucune ligne
+  `profiles` n'existe pour la session, la page d'authentification ouvre un écran « Je viens… »
+  qui propose **client** ou **prestataire** et attend une confirmation explicite. Un compte Google
+  ne peut pas devenir administrateur par ce chemin — la liste des rôles proposés l'exclut,
+  `completeSignup()` le refuse, et côté base la politique RLS d'auto-insertion (`role <> 'admin'`)
+  plus le déclencheur `guard_profile_privileges` réécrivent toute tentative.
+- En **mode démonstration**, le bouton reste visible et un clic affiche ce message, sans
+  simulation de session : « Connexion Google indisponible en mode démonstration : elle exige un
+  projet Supabase avec le fournisseur Google activé. Utilisez les comptes de démonstration. »
+
+**Ce qui n'est PAS encore opérationnel**
+
+Le trajet réseau Google (consentement, échange du code, retour réel) **n'a jamais été exercé** :
+il exige un projet Supabase et un client OAuth Google, deux choses qui n'existent pas encore.
+Aucune donnée de session Google n'a été fabriquée pour faire croire au contraire.
+
+**Configuration à réaliser (dans cet ordre)**
+
+1. [Google Cloud Console](https://console.cloud.google.com) → *APIs & Services → Credentials* →
+   **Create Credentials → OAuth client ID**, type *Web application*.
+   - *Authorized JavaScript origins* : `http://localhost:4173` et l'URL du site en production.
+   - *Authorized redirect URIs* : `https://<projet>.supabase.co/auth/v1/callback` (l'URL exacte est
+     donnée par Supabase à l'étape 3).
+   - Noter le **Client ID** et le **Client secret**.
+2. Supabase → **Authentication → URL Configuration** :
+   - *Site URL* : `https://<domaine>` (production),
+   - *Redirect URLs* : ajouter **les deux** retours attendus par l'application —
+     `http://localhost:4173/auth/connexion.html` pour les tests locaux et
+     `https://<domaine>/auth/connexion.html` pour la production.
+3. Supabase → **Authentication → Sign In / Providers → Google** : activer le fournisseur et coller
+   le Client ID / Client secret de l'étape 1.
+4. Revenir sur la page de connexion et cliquer « Continuer avec Google » : le consentement
+   s'ouvre, le retour ramène sur `connexion.html`, l'écran de rôle demande client ou prestataire.
+   Le premier essai réel est le test qui manque.
+
+**Rappels utiles**
+
+- « Confirm email » doit rester **désactivé** (§7, point 4) : un compte Google arrive sans ligne
+  `profiles`, et c'est précisément ce que l'écran de rôle vient compléter.
+- Le nom affiché sur cet écran vient des métadonnées du fournisseur (`user_metadata.full_name`,
+  sinon `name`, sinon la partie locale de l'adresse e-mail).
+- Un compte Google suspendu par un administrateur est déconnecté dès la tentative d'accès.
+
 ## 8. Sécurité
 
 **Ce qui est en place dans le code**
@@ -281,6 +339,11 @@ contact ailleurs que dans le navigateur qui les a saisis. Tout le reste fonction
 - Les en-têtes HTTP de production (CSP, HSTS) : le serveur de développement ne les pose pas ;
   cela relève de l'hébergeur.
 - La protection contre l'abus du formulaire de contact (pas de limite de débit côté serveur).
+- Le trajet OAuth Google de bout en bout (consentement réel, échange du code, retour sur
+  `connexion.html`) : seul le câblage applicatif est éprouvé, par simulation avec un faux client
+  (§7bis). L'interdiction faite à un compte Google de devenir administrateur repose sur trois
+  garde-fous (liste de rôles côté application, politique RLS d'auto-insertion, déclencheur
+  `guard_profile_privileges`), dont les deux derniers restent à valider sur une instance réelle.
 
 ## 9. Tests et état du projet
 
@@ -289,11 +352,17 @@ le 15 octobre 2026, sur le code de la branche `main` :
 
 | Campagne | Portée | Résultat |
 |---|---|---|
-| `node --test "tests/*.test.js"` | couche de données, authentification, gardes, formats `Intl` | **27 / 27** |
+| `node --test "tests/*.test.js"` | couche de données, authentification démo et contrat OAuth, gardes, formats `Intl` | **48 / 48** |
 | QA écran headless | 23 pages : statuts HTTP, erreurs console, requêtes hors origine, débordements de 360 à 1440 px, clavier Tab/Échap, focus visibles, lien d'évitement, modales, échappement XSS, gardes de session, hors ligne, `config.js` vide, mouvement réduit | **47 / 47** |
 | QA parcours d'écriture | inscription + validation de formulaires, persistance du profil, envoi de devis (date passée refusée), acceptation prestataire, messagerie aller-retour et accusés de lecture, clôture, avis → modération → publication → affichage public, badge « Vérifié », suspension prestataire et utilisateur, catégories, formulaire de contact, cloisonnement des rôles | **42 / 42** |
+| QA Google (mode démonstration) | bouton présent sur les deux pages, message honnête au clic, aucune session fabriquée, connexion e-mail toujours fonctionnelle, mise en page et contrastes mesurés à 6 largeurs | **21 / 21** |
+| QA Google (retour simulé, mode réel) | faux client Supabase injecté côté navigateur : session sans profil → écran de rôle, nom repris des métadonnées, aucune écriture avant confirmation, confirmation client (1 ligne `profiles`) et prestataire (`profiles` + `providers`), `?next` retrouvé, intention nettoyée, « Utiliser un autre compte », absence d'intention = page inchangée, clic Google → consentement avec `redirectTo` et `skipBrowserRedirect` | **24 / 24** |
 | Contrôle du menu compte | ouvert/fermé, Échap, clic extérieur, 4 pages | **9 / 9** |
-| Erreurs JavaScript | cumulé sur les trois campagnes | **0** |
+| Erreurs JavaScript | cumulé sur les campagnes ci-dessus | **0** |
+
+La campagne « retour simulé » éprouve le **câblage de la page** (détection, écran de rôle,
+écritures demandées, redirection) avec un faux client : elle ne prouve **pas** le trajet réseau
+Google, qui demande un vrai fournisseur configuré (§7bis).
 
 Trois défauts trouvés pendant cette phase de publication et corrigés depuis (`b5592bc`,
 `232d13a`, `30c965c`) : un débordement horizontal de 2 px à 360 px sur la fiche prestataire
@@ -307,6 +376,8 @@ rejouées après correction.
   rien n'est revendiqué à leur sujet.
 - **Supabase** : **non testé sur une instance réelle** (voir §7 et §8). Le mode réel est donc
   documenté, pas garanti.
+- **Google OAuth** : chemin codé et simulé, **jamais exécuté contre le vrai fournisseur** — ni
+  consentement, ni échange de code, ni retour réel (voir §7bis).
 - **PWA** : manifeste et service worker validés par mesure interne ; l'invite « Installer
   l'application » n'est pas observable en headless et reste à confirmer sur mobile en HTTPS.
 - **Photos** : visuels de démonstration générés (≈ 1,9 Mo au total, ré-encodés pour les connexions

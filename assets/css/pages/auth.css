@@ -50,6 +50,27 @@
 .role-card__icon { display: inline-flex; color: var(--accent-text); flex: none; }
 .role-card__desc { font-size: .85rem; }
 
+/* Séparateur « ou » et bouton Google */
+.auth-or { display: flex; align-items: center; gap: var(--space-3); margin: var(--space-5) 0 var(--space-4);
+  color: var(--text-muted); font-size: .85rem; }
+.auth-or::before, .auth-or::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.auth-oauth { margin-top: var(--space-2); }
+.auth-oauth-note { margin-top: var(--space-3); font-size: .85rem; text-align: center; }
+.btn--google svg { flex: none; }
+
+/* Écran de choix du rôle, affiché au retour d'un compte Google fraîchement connecté.
+   display:grid neutralise l'attribut hidden : [hidden] doit le redire explicitement
+   (même piège que .nav__menu, corrigé en 232d13a). */
+.pending-signup { display: grid; gap: var(--space-4); }
+.pending-signup[hidden] { display: none; }
+.pending-signup h2 { font-size: 1.3rem; }
+/* Cartes empilées : la carte de connexion fait 420 px, deux colonnes y laissent
+   171 px par carte et le libellé débordait sa propre bordure (172 > 167 mesurés).
+   L'inscription, dans sa carte large de 560 px, garde ses deux colonnes. */
+.pending-signup .role-picker { margin-bottom: 0; grid-template-columns: 1fr; }
+.linklike { background: none; border: 0; padding: 0; font: inherit; color: var(--text); font-weight: 600;
+  text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
 /* Liens d'appoint et retour à l'accueil — texte courant (14,4 px) : aucun orange
    de la palette n'atteint 4,5:1 sur blanc (ruling repris du pied de page) : le
    lien prend la couleur du texte courant et se distingue par le soulignement. */

@@ -59,6 +59,13 @@ export class DemoAuth {
     return this.current();
   }
 
+  // Pas d'OAuth en démonstration : un compte de test se crée toujours par le
+  // formulaire complet, profil inclus. La page de connexion appelle cette méthode
+  // dans les deux modes — elle doit donc exister et répondre « rien à compléter ».
+  async pendingSignup() {
+    return null;
+  }
+
   async signUp({ fullName, email, phone, password, role }) {
     const state = this._state();
     const normalized = normalizeEmail(email);

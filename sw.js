@@ -5,7 +5,7 @@
 // ressources statiques same-origin reçues en GET ; les appels Supabase (cross-origin, hôte
 // *.supabase.co) et toute requête non-GET ne sont jamais cachés.
 
-const CACHE = 'eventis-v2';
+const CACHE = 'eventis-v3';
 
 // Uniquement des fichiers qui existent réellement dans le dépôt (chaque URL est vérifiée en QA).
 const PRECACHE = [

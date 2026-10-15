@@ -2,6 +2,7 @@
 // Redirection post-inscription : prestataire → compléter sa fiche ; client → son compte.
 import { auth } from '../core/auth.js';
 import { toast, icon } from '../core/ui.js';
+import { mountGoogleButton } from '../components/google-button.js';
 import { mountNavbar } from '../components/navbar.js';
 import { mountFooter } from '../components/footer.js';
 import { mountPasswordToggles } from '../components/password-toggle.js';
@@ -21,6 +22,10 @@ const roleInputs = [...form.querySelectorAll('input[name="role"]')];
 document.querySelectorAll('.role-card__icon').forEach(el => { el.innerHTML = icon(el.dataset.icon); });
 
 mountPasswordToggles();
+
+// Le bouton Google reprend le rôle coché sur ce formulaire, mais n'écrit rien :
+// la page de connexion demande une confirmation du rôle au retour de Google.
+mountGoogleButton({ sourceForm: form, onError: showError });
 
 // Rôle pré-sélectionné via l'URL (?role=prestataire depuis la home, par ex.) + état visuel des cartes.
 const wantedRole = new URLSearchParams(location.search).get('role');

@@ -1,9 +1,13 @@
 // Page connexion Eventis — e-mail/mot de passe → auth.signIn → redirection (?next ou home du rôle).
 // Mode démo : case « Afficher les identifiants démo » + consigne honnête pour le mot de passe oublié.
+// Retour d'un compte Google : si la session existe sans profil, l'écran de choix du rôle
+// (client / prestataire) prend la main — un compte Google n'est jamais administrateur.
 import { auth } from '../core/auth.js';
 import { isDemoMode, CONFIG } from '../core/config.js';
 import { HOME_FOR } from '../core/guards.js';
-import { toast, esc } from '../core/ui.js';
+import { toast, esc, icon } from '../core/ui.js';
+import { clearIntent, readIntent, safeNext } from '../core/oauth.js';
+import { mountGoogleButton, resolveOAuthReturn } from '../components/google-button.js';
 import { mountPasswordToggles } from '../components/password-toggle.js';
 import { mountNavbar } from '../components/navbar.js';
 import { mountFooter } from '../components/footer.js';
@@ -12,12 +16,24 @@ mountNavbar();
 mountFooter();
 
 const form = document.querySelector('#login-form');
+const plainBlock = document.querySelector('#login-plain');
 const emailInput = document.querySelector('#l-email');
 const passwordInput = document.querySelector('#l-password');
 const errorsBox = document.querySelector('#login-errors');
 const submitBtn = form.querySelector('button[type="submit"]');
+const pendingPanel = document.querySelector('#pending-signup');
+const pendingName = document.querySelector('#pending-name');
+const pendingConfirm = document.querySelector('#pending-confirm');
+const pendingCancel = document.querySelector('#pending-cancel');
+const pendingRoles = [...pendingPanel.querySelectorAll('input[name="pending-role"]')];
 
 mountPasswordToggles();
+
+function showError(message) {
+  errorsBox.textContent = message;
+  errorsBox.hidden = false;
+  errorsBox.scrollIntoView({ block: 'nearest' });
+}
 
 // Identifiants démo : visibles uniquement en mode démo, avec un bouton « Remplir » par compte.
 if (isDemoMode()) {
@@ -63,11 +79,13 @@ document.querySelector('#forgot-link').addEventListener('click', async e => {
   }
 });
 
-// Cible après connexion : ?next= (protégé contre les URL absolues) sinon la home du rôle.
-function redirectTarget(user) {
-  const next = new URLSearchParams(location.search).get('next');
-  if (next && next.startsWith('/') && !next.startsWith('//')) return next;
-  return HOME_FOR[user.role] ?? '/';
+// Cible après connexion : l'intention Google (?next consigné avant le départ), puis
+// ?next= de l'URL, sinon la home du rôle. Les deux sources sont limitées aux chemins internes.
+function redirectTarget(user, intentNext = null) {
+  return intentNext
+    ?? safeNext(new URLSearchParams(location.search).get('next'))
+    ?? HOME_FOR[user.role]
+    ?? '/';
 }
 
 form.addEventListener('submit', async e => {
@@ -79,9 +97,62 @@ form.addEventListener('submit', async e => {
     const user = await auth.signIn(emailInput.value.trim(), passwordInput.value);
     location.replace(redirectTarget(user));
   } catch (err) {
-    errorsBox.textContent = err?.message || 'Identifiants invalides.';
-    errorsBox.hidden = false;
+    showError(err?.message || 'Identifiants invalides.');
   } finally {
     submitBtn.disabled = false;
   }
 });
+
+// --- Retour Google -----------------------------------------------------------
+function showPendingPanel(pending, role) {
+  form.hidden = true;
+  plainBlock.hidden = true;
+  pendingName.textContent = pending.fullName ? `— ${pending.fullName}` : '';
+  // Icônes des cartes rôle (les mêmes que l'inscription).
+  pendingPanel.querySelectorAll('.role-card__icon').forEach(el => { el.innerHTML = icon(el.dataset.icon); });
+  if (role) pendingRoles.forEach(r => { r.checked = r.value === role; });
+  pendingPanel.hidden = false;
+  pendingRoles.find(r => r.checked)?.focus();
+}
+
+function hidePendingPanel() {
+  pendingPanel.hidden = true;
+  errorsBox.hidden = true;
+  form.hidden = false;
+  plainBlock.hidden = false;
+  clearIntent(window.sessionStorage);
+  emailInput.focus();
+}
+
+pendingConfirm.addEventListener('click', async () => {
+  const role = pendingRoles.find(r => r.checked)?.value ?? 'client';
+  pendingConfirm.disabled = true;
+  try {
+    const user = await auth.completeSignup({ role });
+    const next = readIntent(window.sessionStorage).next;
+    clearIntent(window.sessionStorage);
+    toast('Compte prêt !', 'success');
+    location.replace(redirectTarget(user, next));
+  } catch (err) {
+    showError(err?.message || "Une erreur est survenue, veuillez réessayer.");
+  } finally {
+    pendingConfirm.disabled = false;
+  }
+});
+
+// Issue de secours : le mauvais compte Google est connecté. Sans elle, l'écran de
+// rôle serait le seul choix possible pour cette session.
+pendingCancel.addEventListener('click', async () => {
+  try { await auth.signOut(); } catch { /* la déconnexion locale suffit à rendre la main */ }
+  hidePendingPanel();
+});
+
+mountGoogleButton({ onError: showError });
+
+// Mené après le montage : la page doit rester utilisable si Supabase ne répond pas.
+const outcome = await resolveOAuthReturn();
+if (outcome.kind === 'signed') {
+  location.replace(redirectTarget(outcome.user, outcome.next));
+} else if (outcome.kind === 'pending') {
+  showPendingPanel(outcome.pending, outcome.role);
+}
