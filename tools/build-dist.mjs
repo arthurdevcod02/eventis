@@ -42,6 +42,35 @@ await rm(DIST, { recursive: true, force: true });
 await mkdir(DIST, { recursive: true });
 for (const rel of sources) await copy(rel);
 
+// Mode réel : Netlify fournit ces deux variables à la machine de build. Elles n'écrivent
+// que dans la copie publiée de config.js, jamais dans le dépôt. Une seule des deux est une
+// erreur : le site afficherait une interface « réelle » branchée sur rien.
+const SUPABASE_URL = (process.env.SUPABASE_URL ?? '').trim();
+const SUPABASE_ANON_KEY = (process.env.SUPABASE_ANON_KEY ?? '').trim();
+if (SUPABASE_URL || SUPABASE_ANON_KEY) {
+  const die = (msg) => { console.error(`injection config.js : ${msg}`); process.exit(1); };
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    die('SUPABASE_URL et SUPABASE_ANON_KEY doivent être définies ensemble — '
+      + 'l\'une sans l\'autre publierait un demi-mode réel.');
+  }
+  if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(SUPABASE_URL)) {
+    die(`SUPABASE_URL doit ressembler à https://<référence>.supabase.co (reçu : ${SUPABASE_URL}).`);
+  }
+  if (!/^[A-Za-z0-9._-]{20,}$/.test(SUPABASE_ANON_KEY)) {
+    // JWT = trois segments base64url séparés par des points ; le point doit donc passer,
+    // mais ni l'apostrophe ni l'espace, qui casseraient le littéral ou trahiraient une copie.
+    die('SUPABASE_ANON_KEY a un format inattendu (clé tronquée ou espace parasite).');
+  }
+  const inject = (text, key, value) => {
+    const re = new RegExp(`^(\\s*${key}:\\s*)''`, 'm');
+    if (!re.test(text)) die(`gabarit inattendu : ${key} introuvable dans config.js.`);
+    return text.replace(re, `$1'${value}'`);
+  };
+  const configPath = join(DIST, 'assets/js/core/config.js');
+  const src = await readFile(configPath, 'utf8');
+  await writeFile(configPath, inject(inject(src, 'SUPABASE_URL', SUPABASE_URL), 'SUPABASE_ANON_KEY', SUPABASE_ANON_KEY));
+}
+
 // Inventaire de ce qui a été produit.
 const found = [];
 async function walk(dir) {
