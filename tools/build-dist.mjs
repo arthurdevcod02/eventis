@@ -7,7 +7,8 @@
 // été copié, et échoue si c'est le cas.
 //
 // Usage : node tools/build-dist.mjs
-import { cp, mkdir, readdir, rm, stat, writeFile } from 'node:fs/promises';
+// Mode réel : SUPABASE_URL et SUPABASE_ANON_KEY dans l'environnement de la machine de build.
+import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -92,6 +93,5 @@ async function exists(p) {
   try { await stat(p); return true; } catch { return false; }
 }
 async function readFileOrEmpty(p) {
-  const { readFile } = await import('node:fs/promises');
   try { return await readFile(p, 'utf8'); } catch { return ''; }
 }

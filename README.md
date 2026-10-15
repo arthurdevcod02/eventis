@@ -482,6 +482,15 @@ répondent, aucun fichier interne du dépôt n'est atteignable (`supabase/`, `te
 présent sur les deux pages et honnête en démo, service worker enregistré, manifeste référencé,
 aucune requête hors de l'origine, aucune erreur console.
 
-**Ce qui n'est pas encore vérifié** : le déploiement lui-même (aucun compte Netlify n'a été
-utilisé ici), donc la page 404 réelle de Netlify, les en-têtes posés par `netlify.toml` et
-l'invite d'installation PWA restent à confirmer sur le premier déploiement en ligne.
+**Contrôles rejoués sur le site en ligne** (`https://eventis-app.netlify.app`, mode démonstration) :
+les 23 pages HTML répondent, les fichiers internes du dépôt sont inaccessibles, les trois règles
+d'en-têtes de `netlify.toml` sont appliquées, la page 404 personnalisée répond avec un vrai statut
+404, `/auth/connexion.html` conserve son extension, `config.js` publié ne contient aucune clé, la
+connexion de démonstration mène bien à `/compte/` avec le nom du compte et survit à un rechargement,
+le service worker est enregistré et activé, le manifeste est servi en `application/manifest+json`,
+aucune erreur console sur `/compte/`, `/compte/messages.html` et `/catalogue.html`.
+
+**Ce qui n'est pas encore vérifié** : le parcours connecté prestataire et administrateur en ligne,
+l'invite d'installation PWA, et surtout **tout ce qui dépend de Supabase en réel** — les scripts
+`supabase/schema.sql`, `rls.sql` et `seed.sql` n'ont jamais été exécutés sur une instance, et
+l'échange réseau OAuth Google n'a jamais eu lieu. Le site est publié **en mode démonstration**.
