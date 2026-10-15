@@ -53,13 +53,14 @@ export function mountNavbar(active = '') {
     const user = auth.current();
     header.innerHTML = `
       ${isDemoMode() ? '<div class="demo-banner"><strong>Mode démonstration</strong> — données fictives, aucune donnée réelle n\'est enregistrée.</div>' : ''}
+      <a class="skip-link" href="#main">Aller au contenu principal</a>
       <nav class="nav" aria-label="Navigation principale">
         <div class="container nav__inner">
           <a class="nav__logo" href="/">Eventis<span>.</span></a>
           <ul class="nav__links">${linksHTML(active)}</ul>
           <div class="nav__actions">
             <button type="button" class="nav__theme" aria-label="Basculer le thème clair ou sombre">${themeIcon()}</button>
-            ${authBlockHTML(user)}
+            <div class="nav__auth">${authBlockHTML(user)}</div>
             <button type="button" class="nav__burger" aria-label="Ouvrir le menu" aria-expanded="false">${icon('menu')}</button>
           </div>
         </div>

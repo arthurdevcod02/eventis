@@ -121,6 +121,13 @@ async function init() {
       (priceFrom === null ? $('f-price-from') : $('f-price-to')).focus();
       return;
     }
+    // La fiche publique affiche « À partir de {priceFrom} » et la borne haute en plage :
+    // un maximum inférieur au minimum s'afficherait donc à l'envers.
+    if (priceTo < priceFrom) {
+      toast('Le prix maximum ne peut pas être inférieur au prix de départ.', 'error');
+      $('f-price-to').focus();
+      return;
+    }
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     try {

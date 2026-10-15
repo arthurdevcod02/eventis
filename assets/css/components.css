@@ -145,6 +145,14 @@
 .nav__links a[aria-current="page"] { color: var(--text); font-weight: 600;
   text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px; }
 .nav__actions { display: flex; align-items: center; gap: var(--space-3); margin-left: auto; }
+.nav__auth { display: flex; align-items: center; gap: var(--space-3); }
+/* Lien d’évitement : masqué hors focus, premier arrêt de Tab sur toutes les pages
+   (le bandeau de navigation compte ~12 arrêts avant le contenu à 360 px). */
+.skip-link { position: fixed; left: var(--space-4); top: -80px; z-index: 90;
+  padding: 10px 16px; min-height: 44px; display: inline-flex; align-items: center;
+  background: var(--surface); color: var(--text); border: 1px solid var(--accent-text);
+  border-radius: var(--radius-sm); font-weight: 600; text-decoration: none; }
+.skip-link:focus { top: var(--space-2); }
 .nav__theme, .nav__burger { display: inline-flex; align-items: center; justify-content: center;
   width: 44px; height: 44px; border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--surface); color: var(--text); }
@@ -226,4 +234,10 @@
   .nav__links, .nav__account { display: none; }
   .nav__burger { display: inline-flex; }
   .footer__cols { grid-template-columns: 1fr; gap: var(--space-5); }
+}
+/* ≤ 640 px : « Se connecter » + « Devenir prestataire » ne tiennent plus entre le
+   logo et le burger (mesuré : page de 522 px pour un viewport de 360 px). Ils ne
+   sont pas perdus — le panneau mobile les reprend dans .nav__mobile-actions. */
+@media (max-width: 640px) {
+  .nav__auth { display: none; }
 }

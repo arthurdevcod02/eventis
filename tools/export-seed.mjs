@@ -2,6 +2,7 @@
 // Usage : node tools/export-seed.mjs > supabase/seed.sql
 import { createHash } from 'node:crypto';
 import { seedState } from '../assets/js/core/seed.js';
+import { CONFIG } from '../assets/js/core/config.js';
 
 // UUID déterministes (stables) dérivés des identifiants du seed.
 const uuidFor = id => {
@@ -17,14 +18,32 @@ const uuidOrNull = id => (id ? q(uuidFor(id)) : 'null');
 
 const state = seedState();
 const out = [];
+
+// `profiles.id` est une FK vers `auth.users(id)` : sans ligne d'identité correspondante,
+// la toute première insertion échoue et le `begin; … commit;` annule tout le seed.
+// Les comptes de démonstration sont donc créés d'abord, avec le mot de passe démo
+// haché côté serveur (bcrypt via pgcrypto), pour être réellement utilisables.
+const seenIds = new Set();
+const users = state.users.filter(u => !seenIds.has(u.id) && (seenIds.add(u.id), true));
+
 out.push('-- Seed démo Eventis — généré par tools/export-seed.mjs (ne pas éditer à la main).');
 out.push('-- Idempotent : relançable sans doublon (on conflict do nothing).');
+out.push(`-- Comptes de démonstration créés avec le mot de passe « ${CONFIG.DEMO_PASSWORD} ».`);
 out.push('');
 out.push('begin;');
 out.push('');
+out.push('create extension if not exists pgcrypto with schema extensions;');
+out.push('');
+out.push('insert into auth.users');
+out.push('  (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at) values');
+out.push(users.map(u =>
+  `  (${q(uuidFor(u.id))}, 'authenticated', 'authenticated', ${q(u.email ?? '')},`
+  + ` extensions.crypt(${q(CONFIG.DEMO_PASSWORD)}, extensions.gen_salt('bf')), now(), ${ts(u.createdAt)}, ${ts(u.createdAt)})`).join(',\n'));
+out.push('on conflict (id) do nothing;');
+out.push('');
 
 out.push('insert into public.profiles (id, full_name, email, phone, role, suspended, created_at) values');
-out.push(state.users.map(u =>
+out.push(users.map(u =>
   `  (${q(uuidFor(u.id))}, ${q(u.fullName)}, ${q(u.email ?? '')}, ${q(u.phone ?? '')}, ${q(u.role)}, ${u.suspended ? 'true' : 'false'}, ${ts(u.createdAt)})`).join(',\n'));
 out.push('on conflict (id) do nothing;');
 out.push('');
