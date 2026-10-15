@@ -1,0 +1,11 @@
+/* Pages légales Eventis — mentions légales, conditions d'utilisation, confidentialité.
+   Colonnes de lecture seule : largeur bornée, titres espacés, aucun composant métier. */
+
+.legal { max-width: 760px; }
+.legal h2 { margin: var(--space-6) 0 var(--space-3); }
+.legal h3 { margin: var(--space-4) 0 var(--space-2); font-size: 1rem; }
+.legal p, .legal li { margin-bottom: var(--space-3); }
+.legal ul { padding-left: var(--space-5); }
+.legal .legal__meta { font-size: .85rem; }
+.legal nav ul { list-style: none; padding-left: 0; display: grid; gap: var(--space-1); }
+.legal nav a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }

@@ -13,13 +13,7 @@
   <link rel="stylesheet" href="/assets/css/tokens.css">
   <link rel="stylesheet" href="/assets/css/base.css">
   <link rel="stylesheet" href="/assets/css/components.css">
-  <style>
-    /* Page mentions légales — ajustements minimaux, tokens uniquement */
-    .legal { max-width: 760px; }
-    .legal h2 { margin: var(--space-6) 0 var(--space-3); }
-    .legal p, .legal li { margin-bottom: var(--space-3); }
-    .legal ul { padding-left: var(--space-5); }
-  </style>
+  <link rel="stylesheet" href="/assets/css/pages/legal.css">
   <script src="/assets/vendor/gsap.min.js" defer></script>
   <script src="/assets/vendor/ScrollTrigger.min.js" defer></script>
   <script src="/assets/vendor/supabase-js.min.js" defer></script>
@@ -31,7 +25,8 @@
     <section class="section">
       <div class="container legal">
         <h1>Mentions légales</h1>
-        <p class="muted">Dernière mise à jour : 13 octobre 2026.</p>
+        <p class="muted">Dernière mise à jour : 15 octobre 2026.</p>
+        <p>Documents du même site : <a href="/cgu.html">conditions générales d'utilisation</a> et <a href="/confidentialite.html">politique de confidentialité</a>.</p>
 
         <h2>Éditeur du site</h2>
         <p>Le site Eventis est édité par Eventis, [forme juridique à compléter], au capital de [montant à compléter], immatriculée au [registre à compléter], dont le siège social est situé à Lomé, Togo.</p>
@@ -42,18 +37,19 @@
         </ul>
 
         <h2>Hébergement</h2>
-        <p>Le site est hébergé par [hébergeur à compléter], dont le siège est situé [adresse à compléter].</p>
+        <p>Les pages du site sont diffusées par Netlify, Inc., 101 2nd Street, San Francisco, CA 94105, États-Unis.</p>
+        <p>La base de données et l'authentification sont assurées par Supabase (supabase.com). Le projet utilisé par Eventis est hébergé dans la région [région du projet à indiquer dans le tableau de bord Supabase, « General settings »]. Les échanges entre votre navigateur et ces services sont chiffrés en HTTPS.</p>
 
         <h2>Propriété intellectuelle</h2>
         <p>L'ensemble des contenus du site Eventis (textes, logos, illustrations, photographies, vidéos, éléments graphiques) est protégé par le droit de la propriété intellectuelle. Toute reproduction, représentation, modification ou exploitation, totale ou partielle, sans autorisation écrite préalable d'Eventis est interdite.</p>
         <p>Les marques et logos des prestataires présentés sur le site restent la propriété de leurs détenteurs respectifs.</p>
 
-        <h2>Données personnelles</h2>
-        <p>Les informations collectées lors de votre inscription et de votre utilisation du service (nom, coordonnées, détails de vos événements et demandes) sont utilisées uniquement pour le fonctionnement de la plateforme : mise en relation avec les prestataires, gestion des demandes de devis et de la messagerie. Elles ne sont jamais cédées ni vendues à des tiers.</p>
-        <p>Conformément à la réglementation applicable en matière de protection des données personnelles, vous disposez d'un droit d'accès, de rectification et de suppression des données vous concernant. Pour l'exercer, écrivez-nous à contact@eventis.tg.</p>
+        <h2>Conditions d'utilisation</h2>
+        <p>L'utilisation du site et la création d'un compte sont régies par les <a href="/cgu.html">conditions générales d'utilisation</a>, dont la version acceptée par chaque compte est enregistrée à l'inscription.</p>
 
-        <h2>Cookies et stockage local</h2>
-        <p>Eventis utilise le stockage local de votre navigateur pour mémoriser vos préférences (thème d'affichage, session) et, en mode démonstration, pour conserver les données fictives de la plateforme sur votre appareil uniquement. Aucun cookie publicitaire n'est déposé.</p>
+        <h2>Données personnelles et cookies</h2>
+        <p>La collecte, l'utilisation, la conservation et la protection de vos données, ainsi que la liste des personnes qui peuvent les lire et la manière d'exercer vos droits, sont décrites dans la <a href="/confidentialite.html">politique de confidentialité</a>.</p>
+        <p>Le site ne dépose aucun cookie publicitaire ni de mesure d'audience ; il utilise uniquement le stockage local de votre navigateur pour votre préférence d'affichage, votre session et, en mode démonstration, des données fictives qui ne quittent pas votre appareil.</p>
       </div>
     </section>
   </main>

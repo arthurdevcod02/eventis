@@ -213,6 +213,7 @@
 .footer__bottom { border-top: 1px solid var(--border); padding-block: var(--space-4);
   display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: space-between;
   font-size: .8rem; color: var(--text); }
+.footer__legal { display: flex; flex-wrap: wrap; gap: var(--space-3); }
 
 /* Modales — le voile passe par --overlay : à .55 sur une page déjà noire, la
    modale sombre n'était plus détachée du fond. */

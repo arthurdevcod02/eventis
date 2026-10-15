@@ -5,6 +5,7 @@
 import { auth } from '../core/auth.js';
 import { isDemoMode, CONFIG } from '../core/config.js';
 import { HOME_FOR } from '../core/guards.js';
+import { CGU_VERSION, CONSENT_MESSAGE } from '../core/legal.js';
 import { toast, esc, icon } from '../core/ui.js';
 import { clearIntent, readIntent, safeNext } from '../core/oauth.js';
 import { mountGoogleButton, resolveOAuthReturn } from '../components/google-button.js';
@@ -26,6 +27,7 @@ const pendingName = document.querySelector('#pending-name');
 const pendingConfirm = document.querySelector('#pending-confirm');
 const pendingCancel = document.querySelector('#pending-cancel');
 const pendingRoles = [...pendingPanel.querySelectorAll('input[name="pending-role"]')];
+const pendingConsent = pendingPanel.querySelector('#g-consent');
 
 mountPasswordToggles();
 
@@ -125,10 +127,15 @@ function hidePendingPanel() {
 }
 
 pendingConfirm.addEventListener('click', async () => {
+  if (!pendingConsent.checked) {
+    showError(CONSENT_MESSAGE);
+    pendingConsent.focus();
+    return;
+  }
   const role = pendingRoles.find(r => r.checked)?.value ?? 'client';
   pendingConfirm.disabled = true;
   try {
-    const user = await auth.completeSignup({ role });
+    const user = await auth.completeSignup({ role, cguVersion: CGU_VERSION });
     const next = readIntent(window.sessionStorage).next;
     clearIntent(window.sessionStorage);
     toast('Compte prêt !', 'success');

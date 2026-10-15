@@ -1,6 +1,7 @@
 // Page inscription Eventis — sélecteur de rôle + nom/e-mail/téléphone/mot de passe → auth.signUp.
 // Redirection post-inscription : prestataire → compléter sa fiche ; client → son compte.
 import { auth } from '../core/auth.js';
+import { CGU_VERSION, CONSENT_MESSAGE } from '../core/legal.js';
 import { toast, icon } from '../core/ui.js';
 import { mountGoogleButton } from '../components/google-button.js';
 import { mountNavbar } from '../components/navbar.js';
@@ -17,6 +18,8 @@ const form = document.querySelector('#register-form');
 const errorsBox = document.querySelector('#reg-errors');
 const submitBtn = form.querySelector('button[type="submit"]');
 const roleInputs = [...form.querySelectorAll('input[name="role"]')];
+const consent = form.querySelector('#r-consent');
+const consentError = () => (consent.checked ? null : CONSENT_MESSAGE);
 
 // Icônes des cartes rôle.
 document.querySelectorAll('.role-card__icon').forEach(el => { el.innerHTML = icon(el.dataset.icon); });
@@ -25,7 +28,8 @@ mountPasswordToggles();
 
 // Le bouton Google reprend le rôle coché sur ce formulaire, mais n'écrit rien :
 // la page de connexion demande une confirmation du rôle au retour de Google.
-mountGoogleButton({ sourceForm: form, onError: showError });
+// Il exige la même case cochée : sans elle, on créerait un compte sans consentement.
+mountGoogleButton({ sourceForm: form, onError: showError, canStart: consentError });
 
 // Rôle pré-sélectionné via l'URL (?role=prestataire depuis la home, par ex.) + état visuel des cartes.
 const wantedRole = new URLSearchParams(location.search).get('role');
@@ -42,8 +46,9 @@ function showError(message) {
   errorsBox.hidden = false;
 }
 
-// Validation métier : e-mail valide, téléphone ≥ 8 chiffres, mots de passe identiques ≥ 8.
-function validate({ email, phone, password, password2 }) {
+// Validation métier : consentement, e-mail valide, téléphone ≥ 8 chiffres, mots de passe identiques ≥ 8.
+function validate({ email, phone, password, password2, consented }) {
+  if (!consented) return CONSENT_MESSAGE;
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return 'Veuillez saisir une adresse e-mail valide.';
   if (phone.replace(/\D/g, '').length < 8) return 'Le numéro de téléphone doit contenir au moins 8 chiffres.';
   if (password.length < 8) return 'Le mot de passe doit contenir au moins 8 caractères.';
@@ -61,6 +66,7 @@ form.addEventListener('submit', async e => {
     password: document.querySelector('#r-password').value,
     password2: document.querySelector('#r-password2').value,
     role: roleInputs.find(r => r.checked)?.value ?? 'client',
+    consented: consent.checked,
   };
   const error = validate(data);
   if (error) { showError(error); return; }
@@ -69,7 +75,7 @@ form.addEventListener('submit', async e => {
   try {
     const user = await auth.signUp({
       fullName: data.fullName, email: data.email, phone: data.phone,
-      password: data.password, role: data.role,
+      password: data.password, role: data.role, cguVersion: CGU_VERSION,
     });
     toast('Compte créé !', 'success');
     location.replace(REDIRECT_FOR[user.role] ?? '/compte/');

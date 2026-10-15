@@ -60,6 +60,10 @@ export function mountFooter() {
     </div>
     <div class="container footer__bottom">
       <p>© 2026 Eventis — L'excellence événementielle, connectée et sécurisée.</p>
-      <a href="/mentions-legales.html">Mentions légales</a>
+      <nav class="footer__legal" aria-label="Documents légaux">
+        <a href="/cgu.html">Conditions d'utilisation</a>
+        <a href="/confidentialite.html">Confidentialité</a>
+        <a href="/mentions-legales.html">Mentions légales</a>
+      </nav>
     </div>`;
 }

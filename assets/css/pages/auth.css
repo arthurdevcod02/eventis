@@ -22,6 +22,17 @@
 .auth-check { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; cursor: pointer; }
 .auth-check input { width: 20px; height: 20px; accent-color: var(--accent-text); }
 
+/* Consentement aux conditions. La case et le texte sont dans un <label> lié, les
+   deux liens juridiques sont hors du libellé : sinon cliquer « Conditions
+   d'utilisation » basculait la case. target=_blank préserve le mot de passe saisi. */
+.consent { display: grid; grid-template-columns: auto 1fr; align-items: start;
+  gap: var(--space-2) var(--space-3); margin: 0 0 var(--space-4); }
+.consent input { width: 20px; height: 20px; margin: 2px 0 0; accent-color: var(--accent-text); }
+.consent label { font-size: .9rem; line-height: 1.45; cursor: pointer; }
+.consent__links { grid-column: 2; font-size: .85rem; }
+.consent__links a { color: var(--text); font-weight: 600; text-decoration: underline;
+  text-underline-offset: 3px; }
+
 /* Panneau identifiants démo (rempli par auth-login.js en mode démo uniquement) */
 #demo-toggle-wrap[hidden], .demo-accounts[hidden] { display: none; }
 .demo-accounts { margin: 0 0 var(--space-4); padding: var(--space-3) var(--space-4);

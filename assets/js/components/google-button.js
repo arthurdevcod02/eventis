@@ -15,7 +15,7 @@ function selectedRole(sourceForm) {
   return sourceForm.querySelector('input[name="role"]:checked')?.value ?? null;
 }
 
-export function mountGoogleButton({ sourceForm = null, onError = () => {} } = {}) {
+export function mountGoogleButton({ sourceForm = null, onError = () => {}, canStart = null } = {}) {
   const button = document.querySelector('[data-google]');
   if (!button) return null;
   const note = document.querySelector('[data-google-note]');
@@ -25,6 +25,11 @@ export function mountGoogleButton({ sourceForm = null, onError = () => {} } = {}
   if (roleNote) roleNote.hidden = isDemoMode();
 
   button.addEventListener('click', async () => {
+    // Le consentement d'abord : un départ chez Google ne doit pas le contourner (au
+    // retour, la page n'aurait plus mémoire de la case), et son absence est le premier
+    // obstacle — y compris en démonstration, où rien ne part chez Google.
+    const blocked = canStart ? canStart() : null;
+    if (blocked) { onError(blocked); return; }
     if (isDemoMode()) { onError(DEMO_OAUTH_MESSAGE); return; }
     button.disabled = true;
     try {

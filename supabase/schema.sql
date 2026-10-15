@@ -6,6 +6,7 @@ create table public.profiles (
   email text,
   phone text,
   role text not null check (role in ('client','prestataire','admin')),
+  cgu_version text,
   suspended boolean not null default false,
   created_at timestamptz not null default now()
 );

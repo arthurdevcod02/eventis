@@ -197,19 +197,22 @@ test('mode réel : une session sans profil ne fait plus échouer ready() (sinon 
 test('completeSignup : un compte Google reçoit le rôle client, jamais de fiche prestataire', async () => {
   const client = fakeClient({ profile: null, metadata: { full_name: 'Kossi' } });
   const auth = loadAuthSupabase(client);
-  const user = await auth.completeSignup({ role: 'client' });
+  const user = await auth.completeSignup({ role: 'client', cguVersion: '2026-10-15' });
   assert.equal(user.role, 'client');
   assert.equal(client.calls.inserts.length, 1, 'une seule ligne écrite : profiles');
   assert.deepEqual(client.calls.inserts[0],
-    { table: 'profiles', row: { id: 'u1', full_name: 'Kossi', email: 'kossi@example.tg', phone: '', role: 'client' } });
+    { table: 'profiles', row: { id: 'u1', full_name: 'Kossi', email: 'kossi@example.tg',
+      phone: '', role: 'client', cgu_version: '2026-10-15' } });
   assert.equal(auth.current().id, 'u1', 'la session devient lisible par les gardes');
 });
 
 test('completeSignup : le rôle prestataire crée la fiche en attente, comme une inscription classique', async () => {
   const client = fakeClient({ profile: null });
   const auth = loadAuthSupabase(client);
-  await auth.completeSignup({ role: 'prestataire' });
+  await auth.completeSignup({ role: 'prestataire', cguVersion: '2026-10-15' });
   assert.equal(client.calls.inserts[0].row.role, 'prestataire');
+  assert.equal(client.calls.inserts[0].row.cgu_version, '2026-10-15',
+    'la version acceptée part en base avec le profil, sur les deux voies d’entrée');
   assert.deepEqual(client.calls.inserts[1],
     { table: 'providers', row: { profile_id: 'u1', business_name: '' } });
 });

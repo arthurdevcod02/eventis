@@ -56,7 +56,7 @@
       return data ? this._mapProfile(data) : null;
     }
 
-    async signUp({ fullName, email, phone, password, role }) {
+    async signUp({ fullName, email, phone, password, role, cguVersion }) {
       if (!['client', 'prestataire'].includes(role)) throw new Error('Rôle invalide.');
       const { data, error } = await this.client.auth.signUp({ email, password });
       if (error) {
@@ -64,7 +64,7 @@
         throw new Error(error.message);
       }
       const userId = data.user.id;
-      await this._provision({ id: userId, fullName, email }, role, phone);
+      await this._provision({ id: userId, fullName, email }, role, phone, cguVersion);
       // Connexion directe si la confirmation d'e-mail est désactivée sur le projet.
       try { await this.signIn(email, password); } catch { /* confirmation d'e-mail requise */ }
       return this._user ?? await this._profile(userId);
@@ -73,11 +73,14 @@
     // Écriture du profil et, pour un prestataire, de sa fiche en attente. Une seule
     // règle pour les deux voies d'entrée : inscription classique et retour Google
     // (completeSignup). Un compte Google ne peut pas non plus choisir « admin » ici.
-    async _provision({ id, fullName, email }, role, phone = '') {
+    // La version acceptée est écrite avec le profil : le consentement laisse une trace
+    // en base, ce n'est pas un simple contrôle d'affichage.
+    async _provision({ id, fullName, email }, role, phone = '', cguVersion) {
       // email est columnné dans public.profiles (I8/R20) : les pages admin
       // (prestataires, utilisateurs) consomment profiles.email via db.js.
       const { error: profileError } = await this.client.from('profiles')
-        .insert({ id, full_name: fullName, email: email ?? '', phone: phone ?? '', role });
+        .insert({ id, full_name: fullName, email: email ?? '', phone: phone ?? '',
+          role, cgu_version: cguVersion });
       if (profileError) throw new Error(profileError.message);
       if (role === 'prestataire') {
         const { error: providerError } = await this.client.from('providers')
@@ -118,11 +121,11 @@
         || 'Compte Eventis';
     }
 
-    async completeSignup({ role } = {}) {
+    async completeSignup({ role, cguVersion } = {}) {
       if (!['client', 'prestataire'].includes(role)) throw new Error('Rôle invalide.');
       const pending = await this.pendingSignup();
       if (!pending) throw new Error('Aucun compte à compléter.');
-      await this._provision(pending, role, '');
+      await this._provision(pending, role, '', cguVersion);
       this._user = await this._profile(pending.id);
       if (this._user.suspended) {
         await this.signOut();

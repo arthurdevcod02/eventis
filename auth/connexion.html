@@ -52,6 +52,16 @@
                 <span class="role-card__desc muted">Votre fiche sera créée en attente de validation par l’administrateur.</span>
               </label>
             </fieldset>
+            <!-- Compte créé par Google : le profil n'existe qu'ici, donc le consentement
+                 se prend ici aussi — la case cochée avant le départ est perdue au retour. -->
+            <div class="consent">
+              <input type="checkbox" id="g-consent">
+              <label for="g-consent">J'ai lu et j'accepte les conditions d'utilisation et la politique de confidentialité d'Eventis.</label>
+              <p class="consent__links">
+                <a href="/cgu.html" target="_blank" rel="noopener">Conditions d'utilisation</a> ·
+                <a href="/confidentialite.html" target="_blank" rel="noopener">Politique de confidentialité</a>
+              </p>
+            </div>
             <button class="btn btn--primary btn--block" type="button" id="pending-confirm">Continuer</button>
             <p class="auth-alt"><button type="button" class="linklike" id="pending-cancel">Utiliser un autre compte</button></p>
           </div>
