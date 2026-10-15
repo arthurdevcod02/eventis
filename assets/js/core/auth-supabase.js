@@ -31,8 +31,10 @@
         throw new Error(error.message);
       }
       const userId = data.user.id;
+      // email est columnné dans public.profiles (I8/R20) : les pages admin
+      // (prestataires, utilisateurs) consomment profiles.email via db.js.
       const { error: profileError } = await this.client.from('profiles')
-        .insert({ id: userId, full_name: fullName, phone: phone ?? '', role });
+        .insert({ id: userId, full_name: fullName, email, phone: phone ?? '', role });
       if (profileError) throw new Error(profileError.message);
       if (role === 'prestataire') {
         const { error: providerError } = await this.client.from('providers')

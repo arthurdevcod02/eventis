@@ -330,7 +330,11 @@ export class DemoAdapter {
       .map(p => {
         const owner = this._user(state, p.ownerId);
         const pub = this._publicProvider(state, p);
+        // ownerSuspended (R18) : listProviders/getProvider masquent aussi un
+        // prestataire dont le gérant est suspendu — la page admin a besoin du
+        // drapeau pour ne proposer aucun lien public trompeur.
         return { ...pub, description: p.description,
+          ownerSuspended: this._ownerSuspended(state, p),
           owner: { fullName: owner?.fullName ?? '', email: owner?.email ?? '' } };
       });
   }
@@ -720,7 +724,11 @@ export class SupabaseAdapter {
   }
 
   async listProvidersAdmin({ status } = {}) {
-    let query = this.client.from('providers').select('*, profiles!providers_profile_id_fkey(full_name, email)');
+    // `email` est columnné dans public.profiles (I8/R20) et `suspended` permet
+    // le drapeau ownerSuspended (R18) : sans lui, l'admin afficherait un lien
+    // public sur les fiches « Approuvé » masquées par la liste publique.
+    let query = this.client.from('providers')
+      .select('*, profiles!providers_profile_id_fkey(full_name, email, suspended)');
     if (status) query = query.eq('status', status);
     const { data, error } = await query;
     if (error) throw new Error(error.message);
@@ -728,6 +736,7 @@ export class SupabaseAdapter {
     return data.map(row => ({
       ...this._decorate(row, categories, []),
       description: row.description,
+      ownerSuspended: !!row.profiles?.suspended,
       owner: { fullName: row.profiles?.full_name ?? '', email: row.profiles?.email ?? '' },
     }));
   }

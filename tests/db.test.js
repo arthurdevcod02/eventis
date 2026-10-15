@@ -144,16 +144,56 @@ test('admin: listReviewsAdmin — non publiés d\'abord, tri date décroissante,
   // à sa place dans le tri par date : v6 (il y a 1 j) reste devant v1 (il y a 2 j).
   await db.setReviewVisible('v1', false);
   assert.deepEqual((await db.listReviewsAdmin()).slice(0, 2).map(v => v.id), ['v6', 'v1']);
+  // I4 — croisement ownerSuspended : suspendre le gérant de Lumen Studio masque
+  // p-lumen du catalogue (drapeau porté par listProvidersAdmin) SANS toucher à
+  // la file de modération, qui continue de nommer le prestataire.
+  await db.setUserSuspended('u-own-lumen', true);
+  assert.equal((await db.listProvidersAdmin({ status: 'approved' })).find(p => p.id === 'p-lumen').ownerSuspended, true);
+  const afterOwner = await db.listReviewsAdmin();
+  assert.equal(afterOwner.length, 6);
+  assert.equal(afterOwner.find(v => v.id === 'v1').providerName, 'Lumen Studio');
+  assert.ok(afterOwner.some(v => v.id === 'v6'));
+  await db.setUserSuspended('u-own-lumen', false);
 });
 
-// Note M3 — plus strict que le brief : aucun compte admin ne peut être suspendu.
-test('admin: setUserSuspended refuse tout administrateur et masque les suspended du public', async () => {
+// Note M3 — plus strict que le brief EN DÉMO : aucun compte administrateur ne peut
+// être suspendu. Le reste du test verrouille I4/R18 : la suspension du GÉRANT d'un
+// prestataire approuvé le masque du catalogue public (chemin _ownerSuspended) et
+// listProvidersAdmin expose le drapeau ownerSuspended consommé par la page admin.
+test('admin: setUserSuspended refuse un administrateur ; gérant suspendu = masque public + ownerSuspended', async () => {
   const db = makeDb();
   await assert.rejects(() => db.setUserSuspended('u-admin', true),
     /Un administrateur ne peut pas être suspendu\./);
   assert.equal((await db.listUsersAdmin()).find(u => u.id === 'u-admin').suspended, false);
+  // Client simple (pas de fiche) : suspendable/réactivable, sans effet catalogue.
   await db.setUserSuspended('u-kossi', true);
   assert.equal((await db.listUsersAdmin()).find(u => u.id === 'u-kossi').suspended, true);
   await db.setUserSuspended('u-kossi', false);
   assert.equal((await db.listUsersAdmin()).find(u => u.id === 'u-kossi').suspended, false);
+  // Gérant réel de la graine : u-own-lumen owns p-lumen (statut approuvé).
+  assert.equal((await db.listProvidersAdmin({ status: 'approved' })).find(p => p.id === 'p-lumen').ownerSuspended, false);
+  await db.setUserSuspended('u-own-lumen', true);
+  assert.ok(!(await db.listProviders()).some(p => p.id === 'p-lumen'), 'p-lumen doit être masqué du catalogue');
+  await assert.rejects(() => db.getProvider('p-lumen'), /Prestataire introuvable/);
+  const row = (await db.listProvidersAdmin({ status: 'approved' })).find(p => p.id === 'p-lumen');
+  assert.equal(row.status, 'approved');
+  assert.equal(row.ownerSuspended, true);
+  await db.setUserSuspended('u-own-lumen', false);
+  assert.ok((await db.listProviders()).some(p => p.id === 'p-lumen'));
+  assert.equal((await db.listProvidersAdmin({ status: 'approved' })).find(p => p.id === 'p-lumen').ownerSuspended, false);
+});
+
+// I7 — la voie « pending → Approuver » de la page admin, côté db : aucun
+// prestataire pending en graine ; setProviderStatus(id,'pending') est la voie
+// publique légitime pour entrer dans la file, puis approuver la referme.
+test('admin: file pending → approbation via setProviderStatus (voie publique)', async () => {
+  const db = makeDb();
+  assert.equal((await db.listProvidersAdmin({ status: 'pending' })).length, 0);
+  await db.setProviderStatus('p-gourmand', 'pending');
+  const pend = await db.listProvidersAdmin({ status: 'pending' });
+  assert.deepEqual(pend.map(p => p.id), ['p-gourmand']);
+  assert.ok(!(await db.listProviders()).some(p => p.id === 'p-gourmand'));
+  await db.setProviderStatus('p-gourmand', 'approved');
+  assert.ok((await db.listProviders()).some(p => p.id === 'p-gourmand'));
+  assert.equal((await db.listProvidersAdmin({ status: 'pending' })).length, 0);
 });

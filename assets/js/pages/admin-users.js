@@ -1,28 +1,17 @@
 // Page administration des utilisateurs Eventis — table (nom, e-mail, rôle,
 // inscription, statut) et actions Suspendre / Réactiver.
-// Règle M3 : la base refuse de suspendre un administrateur ; l'UI ne propose
-// donc JAMAIS l'action sur une ligne admin ni sur le compte connecté, et affiche
-// le message de la base tel quel si l'appel est malgré tout déclenché.
+// Règle M3 : l'UI ne propose JAMAIS l'action sur une ligne administrateur ni sur
+// le compte connecté. En mode démo, la base refuse en plus toute suspension
+// d'administrateur ; en mode Supabase, seule cette barrière d'interface protège
+// ces lignes (le message de la page doit donc décrire ce qui est réellement
+// garanti, pas une protection de base qui n'existe que dans un des deux modes).
 import { db } from '../core/db.js';
-import { requireAuth } from '../core/guards.js';
-import { esc, icon, formatDateFR, toast } from '../core/ui.js';
-import { mountNavbar } from '../components/navbar.js';
-import { mountFooter } from '../components/footer.js';
-import { confirmModal } from '../components/modal.js';
-
-const user = requireAuth(['admin']);
-// user === null → requireAuth a déjà redirigé (location.replace) : on arrête tout ici.
-if (user) {
-  mountNavbar();
-  mountFooter();
-  init().catch(err => {
-    toast(err?.message || 'Chargement impossible, veuillez réessayer.', 'error');
-  });
-}
+import { esc, icon, formatDateFR } from '../core/ui.js';
+import { bootAdminPage, confirmAction, refocusRow } from '../components/admin-actions.js';
 
 const ROLES = { client: 'Client', prestataire: 'Prestataire', admin: 'Administrateur' };
 
-// Une ligne sans action = administrateur (refusé par la base) OU votre propre compte.
+// Une ligne sans action = administrateur OU votre propre compte (barrière UI).
 function isSuspendable(u) {
   return u.role !== 'admin' && u.id !== user.id;
 }
@@ -64,7 +53,7 @@ function render(list) {
         <tbody>${list.map(rowHTML).join('')}</tbody>
       </table>
     </div>
-    <p class="admin-note">${icon('eye')} Les comptes administrateurs et votre propre compte (${protectedCount} ligne${protectedCount > 1 ? 's' : ''}) ne peuvent pas être suspendus : la base le refuse, l’action n’est donc pas proposée.</p>`;
+    <p class="admin-note">${icon('eye')} Les comptes administrateurs et votre propre compte (${protectedCount} ligne${protectedCount > 1 ? 's' : ''}) ne sont jamais proposés à la suspension depuis cette page : l’action y est absente, et un administrateur ne peut pas suspendre son propre compte.</p>`;
 
   const byId = new Map(list.map(u => [u.id, u]));
   document.querySelectorAll('[data-action]').forEach(el =>
@@ -74,28 +63,32 @@ function render(list) {
 async function reload(refocusId = null) {
   const list = await db.listUsersAdmin();
   render(list);
-  const row = refocusId && document.querySelector(`[data-id="${CSS.escape(refocusId)}"]`);
-  (row ?? document.getElementById('users-admin'))?.focus?.({ preventScroll: true });
+  // Repli focalisable (M7) : #users-admin porte tabindex="-1" dans la page.
+  refocusRow(refocusId, document.getElementById('users-admin'));
 }
 
 function confirmSuspend(u, suspended) {
-  if (!u || !isSuspendable(u)) return; // garde-fou : aucune action admin sur une ligne protégée
+  if (!u || !isSuspendable(u)) return; // garde-fou : aucune action sur une ligne protégée
   const label = u.fullName || u.email || 'ce compte';
-  confirmModal({
+  // I3 : la conséquence sur le catalogue public n'existe que pour un compte
+  // prestataire (fiches rattachées) — ne pas l'affirmer pour un client.
+  const consequence = suspended
+    ? `<p class="admin-note">La connexion sera refusée.${u.role === 'prestataire'
+        ? ' Les fiches de ce prestataire disparaîtront du catalogue public tant que le compte est suspendu.'
+        : ''}</p>`
+    : '';
+  confirmAction({
     title: suspended ? 'Suspendre un compte' : 'Réactiver un compte',
     question: `${suspended ? 'Suspendre' : 'Réactiver'} le compte de « ${label} » ?`,
     bodyHTML: `<dl class="request-detail__grid">
         <div class="request-detail__item"><dt>E-mail</dt><dd>${esc(u.email || '—')}</dd></div>
         <div class="request-detail__item"><dt>Rôle</dt><dd>${esc(ROLES[u.role] ?? u.role)}</dd></div>
         <div class="request-detail__item"><dt>Inscription</dt><dd>${esc(formatDateFR(u.createdAt) || '—')}</dd></div>
-      </dl>
-      ${suspended ? '<p class="admin-note">La connexion sera refusée et les fiches du prestataire disparaîtront du catalogue public.</p>' : ''}`,
+      </dl>${consequence}`,
     confirmLabel: suspended ? 'Suspendre' : 'Réactiver',
-    onConfirm: async () => {
-      await db.setUserSuspended(u.id, suspended);
-      toast(suspended ? `Compte de « ${label} » suspendu.` : `Compte de « ${label} » réactivé.`, 'success');
-      await reload(u.id);
-    },
+    run: () => db.setUserSuspended(u.id, suspended),
+    successMessage: suspended ? `Compte de « ${label} » suspendu.` : `Compte de « ${label} » réactivé.`,
+    reload: () => reload(u.id),
   });
 }
 
@@ -107,3 +100,7 @@ const handlers = {
 async function init() {
   await reload();
 }
+
+// requireAuth renvoie le compte connecté : user.id sert à exclure sa propre ligne.
+// user === null (non admin) → bootAdminPage ne lance rien (redirection déjà faite).
+const user = bootAdminPage(init);

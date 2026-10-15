@@ -21,7 +21,11 @@
 .badge--verified { background: rgba(22,163,74,.12); color: var(--color-green-dark); }
 [data-theme="dark"] .badge--verified { color: #4ADE80; }
 .badge--sent { background: rgba(107,114,128,.12); color: var(--text-muted); }
-.badge--progress { background: rgba(249,115,22,.12); color: var(--color-orange-hover); }
+/* Badge « en attente / en cours » (R19) : fond orange plein + texte noir
+   (#111111 sur #F97316 ≈ 6.8:1, AA dans les deux thèmes — tokens fixes,
+   non affectés par [data-theme="dark"]). L'ancienne variante translucide
+   (#EA580C sur 12 % d'orange) tombait à ≈ 3.5:1 pour du texte 12 px. */
+.badge--progress { background: var(--color-orange); color: var(--color-black); }
 .badge--accepted { background: rgba(22,163,74,.12); color: var(--color-green-dark); }
 [data-theme="dark"] .badge--accepted { color: #4ADE80; }
 .badge--declined { background: rgba(220,38,38,.12); color: #B91C1C; }

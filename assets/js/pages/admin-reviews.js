@@ -2,21 +2,10 @@
 // d'abord (ordre renvoyé par db.listReviewsAdmin), puis les avis publiés.
 // Actions « Publier » / « Masquer » confirmées en modale via db.setReviewVisible.
 import { db } from '../core/db.js';
-import { requireAuth } from '../core/guards.js';
-import { esc, icon, formatDateFR, renderStars, toast } from '../core/ui.js';
-import { mountNavbar } from '../components/navbar.js';
-import { mountFooter } from '../components/footer.js';
-import { confirmModal } from '../components/modal.js';
+import { esc, icon, formatDateFR, renderStars } from '../core/ui.js';
+import { bootAdminPage, confirmAction, refocusRow } from '../components/admin-actions.js';
 
-const user = requireAuth(['admin']);
-// user === null → requireAuth a déjà redirigé (location.replace) : on arrête tout ici.
-if (user) {
-  mountNavbar();
-  mountFooter();
-  init().catch(err => {
-    toast(err?.message || 'Chargement impossible, veuillez réessayer.', 'error');
-  });
-}
+bootAdminPage(init);
 
 const providerLabel = v => v.providerName || 'Prestataire supprimé';
 const clientLabel = v => v.clientName || 'Compte supprimé';
@@ -33,7 +22,9 @@ function itemHTML(v) {
       <p class="review-item__meta">
         <span>${esc(clientLabel(v))}</span>
         <span>${esc(formatDateFR(v.createdAt) || 'date inconnue')}</span>
-        <span>${renderStars(v.rating)} <span class="muted">${esc(v.rating)} sur 5</span></span>
+        ${/* M9 : renderStars porte déjà aria-label « Note N sur 5 » ; le texte
+             visible reste pour les voyants mais n'est pas annoncé deux fois. */''}
+        <span>${renderStars(v.rating)} <span class="muted" aria-hidden="true">${esc(v.rating)} sur 5</span></span>
       </p>
       <p class="review-item__text">${v.comment ? esc(v.comment) : '<span class="muted">Aucun commentaire rédigé.</span>'}</p>
       <div class="review-item__actions">
@@ -42,7 +33,7 @@ function itemHTML(v) {
           : `<button type="button" class="btn btn--primary" data-action="publish" data-id="${esc(v.id)}">Publier</button>`}
         ${v.visible
           ? ''
-          : '<span class="muted">Cet avis n’apparaît sur la fiche publique de personne tant qu’il n’est pas publié.</span>'}
+          : '<span class="muted">Cet avis n’apparaît sur aucune fiche publique tant qu’il n’est pas publié.</span>'}
       </div>
     </article>`;
 }
@@ -75,14 +66,14 @@ function render(list) {
 async function reload(refocusId = null) {
   const list = await db.listReviewsAdmin();
   render(list);
-  const row = refocusId && document.querySelector(`[data-id="${CSS.escape(refocusId)}"]`);
-  (row ?? document.getElementById('reviews-admin'))?.focus?.({ preventScroll: true });
+  // Repli focalisable (M7) : #reviews-admin porte tabindex="-1" dans la page.
+  refocusRow(refocusId, document.getElementById('reviews-admin'));
 }
 
 function confirmVisibility(v) {
   if (!v) return;
   const publishing = !v.visible;
-  confirmModal({
+  confirmAction({
     title: publishing ? 'Publier un avis' : 'Masquer un avis',
     question: publishing
       ? `Publier cet avis sur la fiche de « ${providerLabel(v)} » ?`
@@ -97,13 +88,11 @@ function confirmVisibility(v) {
         ? '<p class="admin-note">L’avis sera visible publiquement et comptera dans la note moyenne du prestataire.</p>'
         : '<p class="admin-note">L’avis restera dans la file de modération mais ne sera plus visible ni comptabilisé.</p>'}`,
     confirmLabel: publishing ? 'Publier' : 'Masquer',
-    onConfirm: async () => {
-      await db.setReviewVisible(v.id, publishing);
-      toast(publishing
-        ? `Avis publié sur la fiche de « ${providerLabel(v)} ».`
-        : `Avis masqué sur la fiche de « ${providerLabel(v)} ».`, 'success');
-      await reload(v.id);
-    },
+    run: () => db.setReviewVisible(v.id, publishing),
+    successMessage: publishing
+      ? `Avis publié sur la fiche de « ${providerLabel(v)} ».`
+      : `Avis masqué sur la fiche de « ${providerLabel(v)} ».`,
+    reload: () => reload(v.id),
   });
 }
 

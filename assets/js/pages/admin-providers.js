@@ -2,24 +2,16 @@
 // badge de vérification, actions par ligne (Approuver / Vérifier / Retirer la
 // vérification / Suspendre / Réactiver) confirmées en modale puis persistées via db.
 import { db } from '../core/db.js';
-import { requireAuth } from '../core/guards.js';
 import { esc, icon, toast } from '../core/ui.js';
-import { mountNavbar } from '../components/navbar.js';
-import { mountFooter } from '../components/footer.js';
-import { confirmModal } from '../components/modal.js';
-
-const user = requireAuth(['admin']);
-// user === null → requireAuth a déjà redirigé (location.replace) : on arrête tout ici.
-// L'amorçage est placé après les déclarations d'état (une fonction appelée depuis
-// init() lit `filter` dès le premier appel : le garder ici déclencherait une
-// erreur de zone temporelle morte « Cannot access 'filter' before initialization »).
+import { bootAdminPage, confirmAction, refocusRow } from '../components/admin-actions.js';
 
 // Libellés portés par du texte (jamais la couleur seule) ; classes de badges
-// déjà définies dans components.css.
+// déjà définies dans components.css. « Suspendu » partage badge--progress avec
+// la page utilisateurs (règle M10 : même libellé = même classe).
 const STATUTS = {
   pending: { label: 'En attente', cls: 'badge--progress' },
   approved: { label: 'Approuvé', cls: 'badge--accepted' },
-  suspended: { label: 'Suspendu', cls: 'badge--closed' },
+  suspended: { label: 'Suspendu', cls: 'badge--progress' },
 };
 const FILTERS = [['', 'Tous les statuts'], ['pending', 'En attente'], ['approved', 'Approuvés'], ['suspended', 'Suspendus']];
 const EMPTY_TEXT = {
@@ -34,13 +26,7 @@ const EMPTY_TEXT = {
 const fromURL = new URLSearchParams(location.search).get('statut');
 let filter = Object.hasOwn(STATUTS, fromURL) ? fromURL : '';
 
-if (user) {
-  mountNavbar();
-  mountFooter();
-  init().catch(err => {
-    toast(err?.message || 'Chargement impossible, veuillez réessayer.', 'error');
-  });
-}
+bootAdminPage(init);
 
 const actionBtn = (action, id, label, tone) =>
   `<button type="button" class="btn btn--${tone}" data-action="${esc(action)}" data-id="${esc(id)}">${esc(label)}</button>`;
@@ -76,21 +62,27 @@ function actionsFor(p) {
 function rowHTML(p) {
   const st = STATUTS[p.status] ?? { label: p.status, cls: '' };
   const name = p.businessName || 'Fiche sans nom';
-  // Lien public seulement si la fiche est réellement visible (getProvider lève
-  // sinon : pas de lien qui aboutit à « Prestataire introuvable »).
-  const title = p.status === 'approved'
+  // Lien public seulement si la fiche est réellement visible : getProvider et
+  // listProviders masquent aussi un prestataire dont le gérant est suspendu
+  // (I4/R18) — sans ce contrôle, « Approuvé » suffirait à poser un lien menant à 404.
+  const ownerHidden = p.status === 'approved' && p.ownerSuspended;
+  const title = (p.status === 'approved' && !ownerHidden)
     ? `<a href="/prestataire.html?id=${esc(encodeURIComponent(p.id))}">${esc(name)}</a>`
     : esc(name);
   const verified = p.isVerified
     ? `<span class="badge badge--verified">${icon('check')} Vérifié</span>`
     : badgeHTML('', 'Non vérifié');
+  // Mention textuelle honnête : la raison pour laquelle aucun lien public n'est
+  // proposé malgré le statut « Approuvé ».
+  const statusCell = badgeHTML(st.cls, st.label)
+    + (ownerHidden ? ' <span class="muted">Gérant suspendu</span>' : '');
   return `
     <tr>
       <th scope="row" class="cell-title">${title}</th>
       <td>${esc(p.owner.fullName || '—')}</td>
       <td>${esc(p.owner.email || '—')}</td>
       <td>${esc(p.categoryName || '—')}</td>
-      <td>${badgeHTML(st.cls, st.label)}</td>
+      <td>${statusCell}</td>
       <td>${verified}</td>
       <td><div class="table__actions">${actionsFor(p).join('')}</div></td>
     </tr>`;
@@ -123,9 +115,13 @@ function render(list) {
     </div>
     ${list.length ? tableHTML : `<div class="empty">${icon('search')}<p>${esc(EMPTY_TEXT[filter])}</p></div>`}`;
 
+  // I1 : le rechargement déclenché par le filtre est rattaché ; sa panne affiche
+  // le message de la base (la table affichée peut rester obsolète, c'est annoncé).
   document.getElementById('f-status').addEventListener('change', e => {
     filter = e.target.value;
-    reload();
+    reload().catch(err => {
+      toast(err?.message || 'Rechargement impossible, veuillez réessayer.', 'error');
+    });
   });
   const byId = new Map(list.map(p => [p.id, p]));
   document.querySelectorAll('[data-action]').forEach(el =>
@@ -135,85 +131,72 @@ function render(list) {
 async function reload(refocusId = null) {
   const list = await db.listProvidersAdmin(filter ? { status: filter } : {});
   render(list);
-  // Le clic a détruit le déclencheur de la modale : on remet le focus sur la
-  // même ligne si elle subsiste (changement de filtre), sinon sur le filtre.
-  const row = refocusId && document.querySelector(`[data-id="${CSS.escape(refocusId)}"]`);
-  (row ?? document.getElementById('f-status'))?.focus?.({ preventScroll: true });
+  refocusRow(refocusId, document.getElementById('f-status'));
 }
 
 const handlers = {
   approve(p) {
     if (!p) return;
-    confirmModal({
+    confirmAction({
       title: 'Approuver un prestataire',
       question: `Approuver « ${p.businessName || 'cette fiche'} » ?`,
       bodyHTML: summaryHTML(p),
       confirmLabel: 'Approuver',
-      onConfirm: async () => {
-        await db.setProviderStatus(p.id, 'approved');
-        toast(`« ${p.businessName || 'La fiche'} » est approuvé : la fiche est publique.`, 'success');
-        await reload(p.id);
-      },
+      run: () => db.setProviderStatus(p.id, 'approved'),
+      successMessage: `La fiche « ${p.businessName || 'sans nom'} » est approuvée : elle est visible publiquement.`,
+      reload: () => reload(p.id),
     });
   },
 
   suspend(p) {
     if (!p) return;
-    confirmModal({
+    confirmAction({
       title: 'Suspendre un prestataire',
       question: `Suspendre « ${p.businessName || 'cette fiche'} » ?`,
       bodyHTML: `${summaryHTML(p)}<p class="admin-note">La fiche disparaît du catalogue public et de sa page publique tant qu’elle est suspendue.</p>`,
       confirmLabel: 'Suspendre',
-      onConfirm: async () => {
-        await db.setProviderStatus(p.id, 'suspended');
-        toast(`« ${p.businessName || 'La fiche'} » est suspendu : il n’est plus visible publiquement.`, 'success');
-        await reload(p.id);
-      },
+      run: () => db.setProviderStatus(p.id, 'suspended'),
+      successMessage: `La fiche « ${p.businessName || 'sans nom'} » est suspendue : elle n’est plus visible publiquement.`,
+      reload: () => reload(p.id),
     });
   },
 
   reactivate(p) {
     if (!p) return;
-    confirmModal({
+    confirmAction({
       title: 'Réactiver un prestataire',
       question: `Réactiver « ${p.businessName || 'cette fiche'} » ?`,
       bodyHTML: summaryHTML(p),
       confirmLabel: 'Réactiver',
-      onConfirm: async () => {
-        await db.setProviderStatus(p.id, 'approved');
-        toast(`« ${p.businessName || 'La fiche'} » est de nouveau approuvé et visible.`, 'success');
-        await reload(p.id);
-      },
+      run: () => db.setProviderStatus(p.id, 'approved'),
+      successMessage: `La fiche « ${p.businessName || 'sans nom'} » est de nouveau approuvée et visible.`,
+      reload: () => reload(p.id),
     });
   },
 
   verify(p) {
     if (!p) return;
-    confirmModal({
+    confirmAction({
       title: 'Accorder le badge Vérifié',
       question: `Accorder le badge « Vérifié » à « ${p.businessName || 'cette fiche'} » ?`,
       bodyHTML: `<p class="admin-note">À réserver aux fiches dont vous avez contrôlé l’identité et les prestations : le badge est affiché publiquement.</p>${summaryHTML(p)}`,
       confirmLabel: 'Accorder le badge',
-      onConfirm: async () => {
-        await db.setProviderVerified(p.id, true);
-        toast(`Badge « Vérifié » accordé à « ${p.businessName || 'la fiche'} ».`, 'success');
-        await reload(p.id);
-      },
+      run: () => db.setProviderVerified(p.id, true),
+      successMessage: `Badge « Vérifié » accordé à la fiche « ${p.businessName || 'sans nom'} ».`,
+      reload: () => reload(p.id),
     });
   },
 
   unverify(p) {
     if (!p) return;
-    confirmModal({
+    confirmAction({
       title: 'Retirer le badge Vérifié',
       question: `Retirer le badge « Vérifié » de « ${p.businessName || 'cette fiche'} » ?`,
       bodyHTML: summaryHTML(p),
       confirmLabel: 'Retirer le badge',
-      onConfirm: async () => {
-        await db.setProviderVerified(p.id, false);
-        toast(`Badge « Vérifié » retiré de « ${p.businessName || 'la fiche'} ».`, 'success');
-        await reload(p.id);
-      },
+      run: () => db.setProviderVerified(p.id, false),
+      successMessage: `Badge « Vérifié » retiré de la fiche « ${p.businessName || 'sans nom'} ».`,
+      reload: () => reload(p.id),
     });
   },
 };

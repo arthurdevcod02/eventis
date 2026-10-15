@@ -2,20 +2,13 @@
 // « à traiter » (comptes depuis la db, jamais des liens décoratifs) et graphique
 // CSS des inscriptions sur 30 jours (.bar-chart : hauteur % du max de la série).
 import { db } from '../core/db.js';
-import { requireAuth } from '../core/guards.js';
-import { esc, icon, formatDateFR, toast } from '../core/ui.js';
-import { mountNavbar } from '../components/navbar.js';
-import { mountFooter } from '../components/footer.js';
+import { esc, icon, formatDateFR } from '../core/ui.js';
+import { bootAdminPage } from '../components/admin-actions.js';
 
-const user = requireAuth(['admin']);
-// user === null → requireAuth a déjà redirigé (location.replace) : on arrête tout ici.
-if (user) {
-  mountNavbar();
-  mountFooter();
-  init().catch(err => {
-    toast(err?.message || 'Chargement impossible, veuillez réessayer.', 'error');
-  });
-}
+// user === null → requireAuth a déjà redirigé (location.replace) : bootAdminPage
+// ne monte rien et ne lance pas init (montage navbar/footer + erreur de chargement
+// annoncée en toast, comme les quatre autres pages admin).
+bootAdminPage(init);
 
 const plural = (n, one, many) => `${n} ${n > 1 ? many : one}`;
 

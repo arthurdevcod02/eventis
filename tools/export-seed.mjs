@@ -23,9 +23,9 @@ out.push('');
 out.push('begin;');
 out.push('');
 
-out.push('insert into public.profiles (id, full_name, phone, role, suspended, created_at) values');
+out.push('insert into public.profiles (id, full_name, email, phone, role, suspended, created_at) values');
 out.push(state.users.map(u =>
-  `  (${q(uuidFor(u.id))}, ${q(u.fullName)}, ${q(u.phone ?? '')}, ${q(u.role)}, ${u.suspended ? 'true' : 'false'}, ${ts(u.createdAt)})`).join(',\n'));
+  `  (${q(uuidFor(u.id))}, ${q(u.fullName)}, ${q(u.email ?? '')}, ${q(u.phone ?? '')}, ${q(u.role)}, ${u.suspended ? 'true' : 'false'}, ${ts(u.createdAt)})`).join(',\n'));
 out.push('on conflict (id) do nothing;');
 out.push('');
 

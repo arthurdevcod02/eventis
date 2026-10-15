@@ -3,22 +3,11 @@
 // db.saveCategory ne validant rien côté base (pas d'unicité de slug), TOUTE la
 // validation est faite ici et affichée en ligne : aucun doublon silencieux.
 import { db } from '../core/db.js';
-import { requireAuth } from '../core/guards.js';
 import { esc, icon, toast } from '../core/ui.js';
-import { mountNavbar } from '../components/navbar.js';
-import { mountFooter } from '../components/footer.js';
-import { openModal, confirmModal } from '../components/modal.js';
+import { openModal } from '../components/modal.js';
+import { bootAdminPage, refocusRow, runAdminAction } from '../components/admin-actions.js';
 
-const user = requireAuth(['admin']);
-// user === null → requireAuth a déjà redirigé (location.replace) : on arrête tout ici.
-if (user) {
-  mountNavbar();
-  mountFooter();
-  document.getElementById('add-category').addEventListener('click', () => showFormModal(null));
-  init().catch(err => {
-    toast(err?.message || 'Chargement impossible, veuillez réessayer.', 'error');
-  });
-}
+bootAdminPage(init);
 
 // Les seules clés du registre d'icônes (ui.js) : icon() lève sur une clé inconnue,
 // donc le menu n'offre QUE celles-ci (aucune icône inventée).
@@ -102,8 +91,7 @@ function render() {
 async function reload(refocusId = null) {
   categories = await db.listCategoriesAdmin();
   render();
-  const row = refocusId && document.querySelector(`[data-id="${CSS.escape(refocusId)}"]`);
-  (row ?? document.getElementById('add-category'))?.focus?.({ preventScroll: true });
+  refocusRow(refocusId, document.getElementById('add-category'));
 }
 
 // --- Formulaire (ajout et renommage partagent la même modale) ----------------
@@ -159,8 +147,9 @@ function showFormModal(c) {
     });
     slugInput.addEventListener('input', () => { slugTouched = true; });
     iconSelect.addEventListener('change', () => {
-      // Clé forcément connue (liste fermée) : icon() ne peut pas lever ici.
-      preview.innerHTML = icon(iconSelect.value);
+      // M5 : l'aperçu passe par safeIcon comme le reste de la page (valeur
+      // inattendue → repli « star », jamais d'exception ni d'icône inventée).
+      preview.innerHTML = safeIcon(iconSelect.value);
     });
 
     overlay.querySelector(`#${prefix}-form`).addEventListener('submit', async e => {
@@ -170,10 +159,16 @@ function showFormModal(c) {
       const btn = overlay.querySelector('button[type="submit"]');
       btn.disabled = true;
       try {
-        await db.saveCategory(c ? { id: c.id, ...values, active: c.active } : { ...values, active: true });
-        close();
-        toast(c ? `Catégorie renommée en « ${values.name} ».` : `Catégorie « ${values.name} » ajoutée et active.`, 'success');
-        await reload(c?.id ?? null);
+        // close() dans run : la modale se ferme dès que l'écriture est passée ;
+        // le rechargement (cosmétique) échoue-t-on, il ne la rouvrira pas (I2).
+        await runAdminAction({
+          run: async () => {
+            await db.saveCategory(c ? { id: c.id, ...values, active: c.active } : { ...values, active: true });
+            close();
+          },
+          successMessage: c ? `Catégorie renommée en « ${values.name} ».` : `Catégorie « ${values.name} » ajoutée et active.`,
+          reload: () => reload(c?.id ?? null),
+        });
       } catch (err) {
         toast(err?.message || 'Enregistrement impossible, veuillez réessayer.', 'error');
         btn.disabled = false;
@@ -183,7 +178,8 @@ function showFormModal(c) {
 }
 
 // Validation UI : nom, format du slug, unicité (la base ne vérifie rien), icône
-// du registre. Messages en ligne sous le champ concerné.
+// du registre. Messages en ligne sous le champ concerné. La longueur maximale du
+// nom est imposée par l'attribut maxlength du champ (pas de contrôle mort ici).
 function readForm(scope, prefix, currentId) {
   const name = scope.querySelector(`#${prefix}-name`).value.trim();
   const slug = scope.querySelector(`#${prefix}-slug`).value.trim().toLowerCase();
@@ -196,7 +192,6 @@ function readForm(scope, prefix, currentId) {
     ok = false;
   };
   if (!name) fail('name', 'Le nom de la catégorie est requis.');
-  else if (name.length > MAX_NAME) fail('name', `Le nom ne peut pas dépasser ${MAX_NAME} caractères.`);
   if (!slug) fail('slug', 'L’identifiant est requis : il est généré depuis le nom.');
   else if (!SLUG_RE.test(slug)) {
     fail('slug', 'Identifiant invalide : lettres minuscules, chiffres et tirets, sans tiret en début ni en fin.');
@@ -213,16 +208,19 @@ async function toggleActive(c) {
   if (!c) return;
   const next = !c.active;
   try {
-    await db.saveCategory({ id: c.id, slug: c.slug, name: c.name, icon: c.icon, active: next });
-    toast(next
-      ? `Catégorie « ${c.name} » réactivée : elle réapparaît dans le filtre du catalogue.`
-      : `Catégorie « ${c.name} » désactivée : elle disparaît du filtre du catalogue.`, 'success');
-    await reload(c.id);
+    await runAdminAction({
+      run: () => db.saveCategory({ id: c.id, slug: c.slug, name: c.name, icon: c.icon, active: next }),
+      successMessage: next
+        ? `Catégorie « ${c.name} » réactivée : elle réapparaît dans le filtre du catalogue.`
+        : `Catégorie « ${c.name} » désactivée : elle disparaît du filtre du catalogue.`,
+      reload: () => reload(c.id),
+    });
   } catch (err) {
     toast(err?.message || 'Action impossible, veuillez réessayer.', 'error');
   }
 }
 
 async function init() {
+  document.getElementById('add-category').addEventListener('click', () => showFormModal(null));
   await reload();
 }
