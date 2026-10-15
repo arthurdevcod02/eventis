@@ -26,7 +26,8 @@ const orDash = v => (v === null || v === undefined || v === '' ? '—' : v);
 
 let requests = [];
 let providers = new Map();
-let reviewedIds = new Set(); // avis déposés pendant cette session (pas de lecture possible côté client)
+let reviewedIds = new Set(); // cache local : reconstruit au chargement via db.listReviewsForClient (R23), complété par un dépôt réussi
+let reviewsByRequest = new Map(); // requestId → avis de ce client (état visible réel, R23)
 let rating = 0;
 
 // --- Liste --------------------------------------------------------------------
@@ -86,8 +87,16 @@ function actionsHTML(r) {
 function noteFor(r) {
   if (r.status === 'declined') return `<p class="muted">Cette demande a été refusée par le prestataire.</p>`;
   if (r.status === 'closed' && reviewedIds.has(r.id)) {
-    return `<div class="review-ok"><strong>Merci pour votre avis !</strong>
-      <span class="muted">Il sera publié après validation par l'équipe Eventis.</span></div>`;
+    const rv = reviewsByRequest.get(r.id);
+    // L'état affiché vient de la donnée réelle (visibilité décidée par l'admin),
+    // jamais d'une supposition : pas de succès mensonger.
+    return rv?.visible
+      ? `<div class="review-ok"><strong>Merci pour votre avis !</strong>
+          <span><span class="badge badge--accepted">Publié</span></span>
+          <span class="muted">Votre avis est en ligne sur la fiche du prestataire.</span></div>`
+      : `<div class="review-ok"><strong>Merci pour votre avis !</strong>
+          <span><span class="badge badge--progress">En attente de modération</span></span>
+          <span class="muted">Il sera publié après validation par l'équipe Eventis.</span></div>`;
   }
   return '';
 }
@@ -182,6 +191,7 @@ function renderStarsInput() {
 function showReviewForm(r, actions) {
   actions.innerHTML = `
     <form class="review-form" id="review-form">
+      <div class="form-errors" data-review-errors role="alert" hidden></div>
       <div class="review-form__note">
         <span id="review-rating-label">Votre note</span>
         <div data-stars>${renderStarsInput()}</div>
@@ -217,17 +227,22 @@ function showReviewForm(r, actions) {
     const submitBtn = form.querySelector('button[type="submit"]');
     submitBtn.disabled = true;
     try {
-      await db.createReview({
+      const created = await db.createReview({
         requestId: r.id, clientId: user.id, rating,
         comment: form.querySelector('#review-comment').value.trim(),
       });
       reviewedIds.add(r.id);
+      reviewsByRequest.set(r.id, created); // visible: false garanti par la db à la création
       toast('Merci ! Votre avis a été enregistré.', 'success');
       renderList();
       openDetail(r.id);
     } catch (err) {
-      // Cas « Un avis existe déjà pour cette demande. » : message toasté tel quel.
-      toast(err?.message || "Envoi impossible, veuillez réessayer.", 'error');
+      // Étape 1 : l'erreur db (« Un avis existe déjà pour cette demande. »,
+      // « Impossible de déposer un avis sur cette demande. ») est remontée
+      // telle quelle dans la .form-errors du formulaire, pas masquée en toast.
+      const errBox = form.querySelector('[data-review-errors]');
+      errBox.textContent = err?.message || 'Envoi impossible, veuillez réessayer.';
+      errBox.hidden = false;
       submitBtn.disabled = false;
     }
   });
@@ -236,6 +251,12 @@ function showReviewForm(r, actions) {
 // --- Chargement -------------------------------------------------------------------
 async function init(user) {
   requests = await db.listRequestsForClient(user.id);
+  // R23 : l'état « déjà avisée » est une lecture de données, pas un souvenir de
+  // session — une demande avisée ne propose plus « Laisser un avis » après
+  // rechargement. Les avis historiques de graine ont requestId null : filtrés.
+  const myReviews = await db.listReviewsForClient(user.id);
+  reviewedIds = new Set(myReviews.map(v => v.requestId).filter(Boolean));
+  reviewsByRequest = new Map(myReviews.filter(v => v.requestId).map(v => [v.requestId, v]));
   for (const r of requests) {
     if (providers.has(r.providerId)) continue;
     try { providers.set(r.providerId, await db.getProvider(r.providerId)); }

@@ -110,6 +110,20 @@ button.request-card { cursor: pointer; font: inherit; }
 .danger-zone p { font-size: .9rem; }
 .danger-zone a { color: var(--color-orange); font-weight: 600; }
 
+/* --- « Mes avis » (profil client, T12) -------------------------------------- */
+.my-reviews { margin-top: var(--space-6); }
+.my-reviews h2 { font-size: 1.25rem; margin-bottom: var(--space-2); }
+.my-reviews > .muted { margin-bottom: var(--space-4); max-width: 60ch; }
+.my-reviews__list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-3); }
+.my-reviews__item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: var(--space-4); display: grid; gap: var(--space-2); }
+.my-reviews__head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: var(--space-3); }
+.my-reviews__title { font-family: var(--font-title); font-weight: 700; min-width: 0; overflow-wrap: anywhere; }
+.my-reviews__meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3);
+  color: var(--text-muted); font-size: .875rem; }
+.my-reviews__text { overflow-wrap: anywhere; }
+
 /* --- Responsive --------------------------------------------------------------- */
 @media (max-width: 760px) {
   .dashboard__stats { grid-template-columns: 1fr; }

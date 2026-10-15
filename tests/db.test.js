@@ -90,6 +90,45 @@ test('avis: visible=false par défaut, publication par admin, un seul avis par d
   await assert.rejects(() => db.createReview({ requestId: 'r2', clientId: 'u-client', rating: 4, comment: 'pas clôturée' }));
 });
 
+// R22 — lecture des avis par leur auteur (« Mes avis », T12). Contrats verrouillés :
+// l'auteur voit SES avis y compris non publiés (seule raison d'être de la section),
+// un autre client ne les voit pas, tri createdAt décroissant, providerName joint,
+// et un avis non publié ne fuite jamais côté public (listReviewsForProvider).
+test('client: listReviewsForClient — auteur voit ses avis non publiés, pas les autres', async () => {
+  const db = makeDb();
+  // Graine : u-kossi n'a que v3 (publié) ; u-ayaba a v6 (non publié, le plus
+  // récent : il y a 1 j), v4 puis v2 : tri décroissant et lecture d'un avis
+  // non publié par son auteur vérifiés sans création.
+  const kossiBefore = await db.listReviewsForClient('u-kossi');
+  assert.deepEqual(kossiBefore.map(v => v.id), ['v3']);
+  assert.equal(kossiBefore[0].providerName, 'Saveurs d’Atakpamé');
+  const ayaba = await db.listReviewsForClient('u-ayaba');
+  assert.deepEqual(ayaba.map(v => v.id), ['v6', 'v4', 'v2']);
+  assert.equal(ayaba[0].visible, false, 'l\'auteur voit son avis non publié dès la graine');
+  assert.deepEqual(await db.listReviewsForClient('u-nobody'), []);
+
+  await db.updateRequestStatus('r4', { status: 'accepted', byRole: 'prestataire' });
+  await db.updateRequestStatus('r4', { status: 'closed', byRole: 'client' });
+  const v = await db.createReview({ requestId: 'r4', clientId: 'u-kossi',
+    rating: 5, comment: 'Buffet excellent, tous les invités étaient ravis.' });
+
+  const after = await db.listReviewsForClient('u-kossi');
+  assert.equal(after.length, 2);
+  assert.equal(after[0].id, v.id, 'tri createdAt décroissant : le plus récent en tête');
+  assert.equal(after[0].visible, false, 'l\'auteur voit son avis non publié');
+  assert.equal(after[0].providerName, 'Saveurs d’Atakpamé');
+  for (const k of ['id', 'requestId', 'providerId', 'rating', 'comment', 'visible', 'createdAt', 'providerName']) {
+    assert.ok(k in after[0], `champ manquant : ${k}`);
+  }
+  // Un autre client ne voit pas l'avis de Kossi.
+  const other = await db.listReviewsForClient('u-client');
+  assert.ok(!other.some(x => x.requestId === 'r4'));
+  // Cœur de la tâche : tant que l'admin ne publie pas, la fiche publique ignore l'avis.
+  assert.ok(!(await db.listReviewsForProvider('p-saveurs')).some(x => x.id === v.id));
+  await db.setReviewVisible(v.id, true);
+  assert.ok((await db.listReviewsForProvider('p-saveurs')).some(x => x.id === v.id));
+});
+
 test('admin: suspendre masque du public ; vérifier accorde le badge', async () => {
   const db = makeDb();
   await db.setProviderStatus('p-kroll', 'suspended');

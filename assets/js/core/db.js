@@ -307,6 +307,19 @@ export class DemoAdapter {
         clientName: this._user(state, v.clientId)?.fullName ?? '', createdAt: v.createdAt }));
   }
 
+  // « Mes avis » (espace client, R22) : l'AUTEUR voit ses avis, y compris non
+  // publiés — c'est la seule raison d'être de cette section et la raison pour
+  // laquelle elle n'existe pas côté listReviewsForProvider (avis visibles seuls).
+  async listReviewsForClient(clientId) {
+    const state = this._load();
+    return state.reviews
+      .filter(v => v.clientId === clientId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .map(v => ({ id: v.id, requestId: v.requestId ?? null, providerId: v.providerId,
+        rating: v.rating, comment: v.comment, visible: !!v.visible, createdAt: v.createdAt,
+        providerName: this._provider(state, v.providerId)?.businessName ?? '' }));
+  }
+
   // File de modération admin : TOUS les avis (publiés et non publiés), les
   // non publiés en tête puis createdAt décroissant — la file à traiter arrive
   // donc en premier sans filtrage côté UI.
@@ -705,6 +718,22 @@ export class SupabaseAdapter {
     if (error) throw new Error(error.message);
     return data.map(v => ({ id: v.id, rating: v.rating, comment: v.comment,
       clientName: v.profiles?.full_name ?? '', createdAt: v.created_at }));
+  }
+
+  // « Mes avis » (espace client, R22) — miroir de listReviewsForProvider, sans le
+  // filtre visible : la politique « reviews read » (rls.sql:48, bras
+  // client_id = auth.uid()) laisse déjà l'auteur lire ses avis non publiés.
+  // Aucune politique RLS n'est ajoutée ni modifiée.
+  async listReviewsForClient(clientId) {
+    const { data, error } = await this.client.from('reviews')
+      .select('*, provider:providers!reviews_provider_id_fkey(business_name)')
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false });
+    if (error) throw new Error(error.message);
+    return (data ?? []).map(v => ({ id: v.id, requestId: v.request_id ?? null,
+      providerId: v.provider_id, rating: v.rating, comment: v.comment,
+      visible: !!v.visible, createdAt: v.created_at,
+      providerName: v.provider?.business_name ?? '' }));
   }
 
   // File de modération admin : tous les avis (visibles et non visibles), non publiés
