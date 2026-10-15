@@ -90,11 +90,21 @@ drop policy if exists "services owner write" on public.services;
 create policy "services owner write" on public.services for all using (is_provider_owner(provider_id));
 
 drop policy if exists "requests party read" on public.requests;
-create policy "requests party read" on public.requests for select using (is_request_party(id) or is_admin());
+-- La politique de lecture de `requests` ne doit PAS rappeler `is_request_party(id)` :
+-- cette fonction relit `requests` par sa clé, et une sous-requête ne voit pas la ligne
+-- en cours d'insertion dans la même commande. Résultat mesuré le 15/10 : `INSERT` seul =
+-- 201, mais `INSERT ... RETURNING` (ce que fait db.js avec `.select().single()`) = 403
+-- « new row violates row-level security policy », parce que Postgres applique la
+-- politique de SELECT à la ligne qu'il vient de créer. On n'utilise donc que des
+-- colonnes de la ligne elle-même ; `is_provider_owner` lit `providers`, jamais `requests`.
+create policy "requests party read" on public.requests for select
+  using (client_id = auth.uid() or is_provider_owner(provider_id) or is_admin());
 drop policy if exists "requests client insert" on public.requests;
 create policy "requests client insert" on public.requests for insert with check (client_id = auth.uid());
 drop policy if exists "requests party update" on public.requests;
-create policy "requests party update" on public.requests for update using (is_request_party(id) or is_admin());
+create policy "requests party update" on public.requests for update
+  using (client_id = auth.uid() or is_provider_owner(provider_id) or is_admin())
+  with check (client_id = auth.uid() or is_provider_owner(provider_id) or is_admin());
 
 drop policy if exists "messages party read" on public.messages;
 create policy "messages party read" on public.messages for select using (is_request_party(request_id) or is_admin());
