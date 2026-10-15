@@ -3,9 +3,9 @@ import { isDemoMode } from '../core/config.js';
 import { icon } from '../core/ui.js';
 
 const CONTACT = [
-  { iconName: 'mail', label: 'contact@eventis.tg', href: 'mailto:contact@eventis.tg' },
-  { iconName: 'phone', label: '+228 70 00 00 00', href: 'tel:+22870000000' },
-  { iconName: 'whatsapp', label: 'WhatsApp +228 70 00 00 00', href: 'https://wa.me/22870000000' },
+  { iconName: 'mail', label: 'nandjanakpane@gmail.com', href: 'mailto:nandjanakpane@gmail.com' },
+  { iconName: 'phone', label: '+228 93 83 85 93', href: 'tel:+22893838593' },
+  { iconName: 'whatsapp', label: 'WhatsApp +228 93 83 85 93', href: 'https://wa.me/22893838593' },
 ];
 
 // Enregistrement du service worker (portée « / », cache statique uniquement).
@@ -51,10 +51,10 @@ export function mountFooter() {
       </nav>
       <div>
         <h2>Contact</h2>
+        <!-- Ces coordonnées sont réelles dans les deux modes : elles ont donc le droit
+             d'être cliquables, y compris en démonstration. -->
         <ul>
-          ${CONTACT.map(c => `<li>${demo
-            ? `<span class="muted">${icon(c.iconName)} ${c.label}</span>`
-            : `<a href="${c.href}">${icon(c.iconName)} ${c.label}</a>`}</li>`).join('')}
+          ${CONTACT.map(c => `<li><a href="${c.href}">${icon(c.iconName)} ${c.label}</a></li>`).join('')}
         </ul>
       </div>
     </div>

@@ -37,7 +37,7 @@ function initProfile(user) {
   // Suppression de compte : rien n'est promis sans l'être (principe fondateur).
   document.querySelector('#danger-text').textContent = isDemoMode()
     ? 'Mode démo : la suppression de compte n\'est pas disponible.'
-    : 'La suppression de compte n\'est pas encore disponible. Pour toute demande, contactez-nous : contact@eventis.tg.';
+    : 'La suppression de compte n\'est pas encore disponible. Pour toute demande, écrivez à nandjanakpane@gmail.com.';
 
   form.addEventListener('submit', async e => {
     e.preventDefault();
