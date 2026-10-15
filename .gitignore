@@ -2,6 +2,9 @@
 node_modules/
 .cache/
 
+# Site assemblé pour l'hébergeur (produit par tools/build-dist.mjs)
+dist/
+
 # Secrets et environnement local — jamais publiés
 .env
 .env.*

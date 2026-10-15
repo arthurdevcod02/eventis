@@ -451,12 +451,37 @@ tests/                 tests Node natifs (node:test)
 docs/superpowers/      spec de design et plan d'implémentation de la phase 1
 ```
 
-### Annexe — mettre en ligne
+### Annexe — mettre en ligne (Netlify)
 
-Le projet est statique : n'importe quel hébergeur convient (Netlify, Vercel, Cloudflare Pages,
-GitHub Pages…). Copier la racine du dépôt telle quelle, sans commande de build.
+Le site est statique, mais **le dépôt ne se publie pas tel quel** : il contient `node_modules`
+(32 Mo), les scripts SQL, les tests et la documentation d'agent. `tools/build-dist.mjs` assemble
+dans `dist/` les 23 pages et les ressources du site uniquement (2,62 MiB), et refuse d'écrire le
+résultat si une cible HTML manque ou si un fichier interdit s'y glisse.
 
-- **HTTPS obligatoire** pour le service worker, le manifeste et l'installation PWA.
-- Configurer la **redirection 404 → `/404.html`** si l'hébergeur ne le fait pas déjà (le serveur
-  de développement, lui, renvoie le vrai statut HTTP).
-- En mode réel, déclarer l'URL du site dans Supabase (§7, étape 5).
+```bash
+node tools/build-dist.mjs          # produit dist/
+PORT=4180 node tools/serve.js      # (depuis dist/) vérifier le site assemblé
+```
+
+Déploiement :
+
+1. Créer un compte Netlify, **Import an existing project** → choisir le dépôt `eventis`.
+2. Netlify lit [`netlify.toml`](netlify.toml) à la racine : commande de build
+   `node tools/build-dist.mjs`, dossier public `dist`, Node 22, « pretty URLs » désactivées
+   (les URLs gardent leur `.html`, ce qui doit correspondre exactement au retour OAuth déclaré).
+3. Laisser les champs d'environnement vides : la configuration est dans
+   `assets/js/core/config.js`, pas dans l'hébergeur. **Ne pas y mettre de clé `service_role`.**
+4. Après le premier déploiement, Netlify attribue `https://<nom-du-site>.netlify.app`. Noter cette
+   URL : c'est la valeur `<domaine>` des §7 et §7bis (Site URL, Redirect URLs, origines Google).
+5. Domaines : ajouter un domaine dans les paramètres Netlify si besoin ; HTTPS est fourni
+   automatiquement, condition du service worker et de l'installation PWA.
+
+Contrôles rejoués sur le site **assemblé** (14 contrôles, tous verts) : les 24 URLs de pages
+répondent, aucun fichier interne du dépôt n'est atteignable (`supabase/`, `tests/`, `docs/`,
+`node_modules/`, `README.md` → 404), connexion de démonstration fonctionnelle, bouton Google
+présent sur les deux pages et honnête en démo, service worker enregistré, manifeste référencé,
+aucune requête hors de l'origine, aucune erreur console.
+
+**Ce qui n'est pas encore vérifié** : le déploiement lui-même (aucun compte Netlify n'a été
+utilisé ici), donc la page 404 réelle de Netlify, les en-têtes posés par `netlify.toml` et
+l'invite d'installation PWA restent à confirmer sur le premier déploiement en ligne.

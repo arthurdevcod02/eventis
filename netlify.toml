@@ -1,0 +1,36 @@
+# Configuration Netlify — Eventis (site statique multi-pages, aucun framework).
+#
+# Le dépôt ne se publie pas tel quel : `node tools/build-dist.mjs` assemble dans `dist/`
+# uniquement les pages et les ressources du site. Sans cette étape, `node_modules` (32 Mo),
+# les scripts SQL, les tests et la documentation d'agent partiraient en ligne.
+
+[build]
+  command = "node tools/build-dist.mjs"
+  publish = "dist"
+
+[build.environment]
+  # L'outil de build est un module ES avec `await` au premier niveau : Node ≥ 20.
+  NODE_VERSION = "22"
+
+# Les URLs du site portent l'extension .html (/auth/connexion.html) et c'est cette URL exacte
+# qui est déclarée comme retour OAuth chez Supabase. Les « pretty URLs » de Netlify réécriraient
+# en /auth/connexion : un saut de plus, et un retour qui ne correspond plus à l'URL autorisée.
+[build.processing.html]
+  pretty_urls = false
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    # Le service worker est le seul fichier à toujours revalider : c'est lui qui décide du reste
+    # du cache. Un sw.js gardé en cache = des visiteurs coincés sur une version fanée.
+    Cache-Control = "no-cache, no-store, must-revalidate"
+
+[[headers]]
+  for = "/manifest.webmanifest"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
