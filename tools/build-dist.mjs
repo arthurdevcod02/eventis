@@ -61,6 +61,26 @@ if (SUPABASE_URL || SUPABASE_ANON_KEY) {
     // mais ni l'apostrophe ni l'espace, qui casseraient le littéral ou trahiraient une copie.
     die('SUPABASE_ANON_KEY a un format inattendu (clé tronquée ou espace parasite).');
   }
+  // Une clé `anon` et une clé `service_role` ont exactement la même forme : le seul moyen de
+  // les distinguer est de lire le champ `role` du JWT. Sans ce contrôle, coller la clé secrète
+  // dans Netlify publie en ligne une clé qui contourne le RLS — sans aucun signal d'erreur.
+  const segments = SUPABASE_ANON_KEY.split('.');
+  if (segments.length === 3) {
+    let claims;
+    try { claims = JSON.parse(Buffer.from(segments[1], 'base64url').toString('utf8')); }
+    catch { die('SUPABASE_ANON_KEY : payload JWT illisible.'); }
+    if (claims.role !== 'anon') {
+      die(`SUPABASE_ANON_KEY est une clé « ${claims.role} », pas « anon » — elle contournerait `
+        + 'le RLS si elle était publiée. Copie la clé de la ligne marquée « anon public ».');
+    }
+    const ref = SUPABASE_URL.replace(/^https:\/\//, '').split('.')[0];
+    if (claims.ref !== ref) {
+      die(`SUPABASE_ANON_KEY est signée pour le projet « ${claims.ref} » alors que SUPABASE_URL `
+        + `pointe sur « ${ref} » — les deux viennent de projets différents.`);
+    }
+  } else if (!SUPABASE_ANON_KEY.startsWith('sb_publishable_')) {
+    die('SUPABASE_ANON_KEY n\'est ni un JWT ni une clé publishable : format non reconnu.');
+  }
   const inject = (text, key, value) => {
     const re = new RegExp(`^(\\s*${key}:\\s*)''`, 'm');
     if (!re.test(text)) die(`gabarit inattendu : ${key} introuvable dans config.js.`);
