@@ -303,8 +303,10 @@ export class DemoAdapter {
     return state.reviews
       .filter(v => v.providerId === providerId && v.visible)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      // Auteur jamais nommé sur la voie publique : la voie réelle ne peut plus le
+      // lire (politique de lecture des profils), la démo montre la même chose.
       .map(v => ({ id: v.id, rating: v.rating, comment: v.comment,
-        clientName: this._user(state, v.clientId)?.fullName ?? '', createdAt: v.createdAt }));
+        clientName: '', createdAt: v.createdAt }));
   }
 
   // « Mes avis » (espace client, R22) : l'AUTEUR voit ses avis, y compris non
@@ -545,14 +547,14 @@ export class SupabaseAdapter {
     if (error || row.status !== 'approved') throw new Error('Prestataire introuvable.');
     const { data: services } = await this.client.from('services').select('*').eq('provider_id', id).order('price');
     const { data: reviews } = await this.client.from('reviews')
-      .select('*, profiles(full_name)').eq('provider_id', id).eq('visible', true);
+      .select('*').eq('provider_id', id).eq('visible', true);
     const categories = await this._categories();
     return {
       ...this._decorate(row, categories, reviews),
       description: row.description, gallery: row.gallery ?? [],
       services: (services ?? []).map(s => ({ id: s.id, label: s.label, description: s.description, price: s.price })),
       reviews: (reviews ?? []).map(v => ({ id: v.id, rating: v.rating, comment: v.comment,
-        clientName: v.profiles?.full_name ?? '', createdAt: v.created_at })),
+        clientName: '', createdAt: v.created_at })),
     };
   }
 
@@ -713,11 +715,11 @@ export class SupabaseAdapter {
 
   async listReviewsForProvider(providerId) {
     const { data, error } = await this.client.from('reviews')
-      .select('*, profiles(full_name)').eq('provider_id', providerId).eq('visible', true)
+      .select('*').eq('provider_id', providerId).eq('visible', true)
       .order('created_at', { ascending: false });
     if (error) throw new Error(error.message);
     return data.map(v => ({ id: v.id, rating: v.rating, comment: v.comment,
-      clientName: v.profiles?.full_name ?? '', createdAt: v.created_at }));
+      clientName: '', createdAt: v.created_at }));
   }
 
   // « Mes avis » (espace client, R22) — miroir de listReviewsForProvider, sans le

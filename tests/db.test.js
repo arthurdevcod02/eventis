@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { memoryStorage } from './helpers/memory-storage.js';
 import { DemoAdapter } from '../assets/js/core/db.js';
 
@@ -88,6 +89,27 @@ test('avis: visible=false par défaut, publication par admin, un seul avis par d
   assert.ok(pub.some(x => x.id === v.id));
   await assert.rejects(() => db.createReview({ requestId: 'r1', clientId: 'u-client', rating: 4, comment: 'doublon' }));
   await assert.rejects(() => db.createReview({ requestId: 'r2', clientId: 'u-client', rating: 4, comment: 'pas clôturée' }));
+});
+
+// Avis publics anonymes (décision du 15/10/2026, fuite « profiles read all » corrigée) :
+// la table des profils porte e-mail et téléphone, elle n'est plus lisible par un
+// visiteur non connecté. La voie publique ne doit donc plus remonter le nom de
+// l'auteur — vérifié sur les DEUX adaptateurs pour que la démo montre ce que la
+// production montre réellement.
+test('public: les avis ne nomment jamais leur auteur', async () => {
+  const db = makeDb();
+  const pub = await db.listReviewsForProvider('p-lumen');
+  assert.ok(pub.length > 0, 'la graine doit contenir un avis publié pour ce prestataire');
+  assert.ok(pub.every(v => v.clientName === ''), 'listReviewsForProvider ne doit exposer aucun nom');
+  // L'admin, lui, garde les noms pour pouvoir modérer.
+  const admin = await db.listReviewsAdmin();
+  assert.ok(admin.some(v => v.clientName !== ''), 'la file admin doit toujours joindre les noms');
+  // Verrou statique : les deux voies publiques du adaptateur réel ne doivent plus
+  // embarquer le profil. `profiles(full_name)` n'a plus le droit d'apparaître ;
+  // la voie admin passe par la relation nommée `client:profiles!…`, qui reste.
+  const source = readFileSync(new URL('../assets/js/core/db.js', import.meta.url), 'utf8');
+  assert.ok(!source.includes('profiles(full_name)'),
+    'une lecture publique embarque encore le profil de son auteur');
 });
 
 // R22 — lecture des avis par leur auteur (« Mes avis », T12). Contrats verrouillés :

@@ -42,7 +42,7 @@ document.querySelector('#featured-grid').innerHTML = featured.map(providerCardHT
 const reviews = (await Promise.all(featured.map(p => db.listReviewsForProvider(p.id)))).flat();
 document.querySelector('#testimonial-grid').innerHTML = reviews.slice(0, 3).map(v => `
   <figure class="card testimonial"><blockquote>« ${esc(v.comment)} »</blockquote>
-  <figcaption><span class="stars">${renderStars(v.rating)}</span><span class="muted">${esc(v.clientName)}</span></figcaption></figure>`).join('');
+  <figcaption><span class="stars">${renderStars(v.rating)}</span><span class="muted">${esc(v.clientName || 'Client·e Eventis')}</span></figcaption></figure>`).join('');
 if (isDemoMode()) document.querySelector('#demo-note').hidden = false;
 
 initReveal();
