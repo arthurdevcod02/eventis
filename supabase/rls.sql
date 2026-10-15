@@ -38,6 +38,18 @@ $$ select exists (select 1 from public.providers pv
      join public.profiles pr on pr.id = pv.profile_id
      where pv.id = p_provider and pr.suspended) $$;
 
+-- Un client garde l'accès à la fiche du prestataire auquel IL a adressé une demande,
+-- même quand cette fiche sort du catalogue public (en attente, suspendue, gérant
+-- suspendu). Sans cela, `getRequest` (`.single()` sur `providers`, db.js:602) ne trouve
+-- plus la ligne et la page « détail de la demande » tombe en « Demande introuvable. »
+-- pour le client, alors que sa demande, elle, reste lisible : mesure du 15/10, 0 ligne
+-- côté client co-contractant d'une fiche `pending`. `security definer` : la fonction
+-- lit `requests` par-dessus sa RLS, donc pas d'appel croisé requests→providers→requests.
+create or replace function public.is_request_client_of(p_provider uuid) returns boolean
+language sql stable security definer set search_path = public as
+$$ select exists (select 1 from public.requests r
+     where r.provider_id = p_provider and r.client_id = auth.uid()) $$;
+
 alter table public.profiles enable row level security;
 alter table public.categories enable row level security;
 alter table public.providers enable row level security;
@@ -76,7 +88,7 @@ drop policy if exists "providers public read approved" on public.providers;
 -- Voie publique : prestataires approuvés dont le gérant n'est pas suspendu.
 create policy "providers public read approved" on public.providers for select
   using ((status = 'approved' and not is_provider_suspended(id))
-    or profile_id = auth.uid() or is_admin());
+    or profile_id = auth.uid() or is_request_client_of(id) or is_admin());
 drop policy if exists "providers owner insert" on public.providers;
 create policy "providers owner insert" on public.providers for insert with check (profile_id = auth.uid());
 drop policy if exists "providers owner update" on public.providers;
