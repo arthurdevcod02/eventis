@@ -53,6 +53,12 @@ export class DemoAuth {
     return u ? this._public(u) : null;
   }
 
+  // Même contrat qu'AuthSupabase : renvoie une promesse résolue sur l'utilisateur
+  // courant. En démo, la lecture est déjà synchrone, il n'y a rien à hydrater.
+  async ready() {
+    return this.current();
+  }
+
   async signUp({ fullName, email, phone, password, role }) {
     const state = this._state();
     const normalized = normalizeEmail(email);

@@ -6,17 +6,17 @@
 // ouverte et ne propose pas de ré-exécuter l'écriture. En revanche, si la
 // mutation elle-même échoue, rien n'est écrit : confirmModal garde la modale
 // ouverte avec le message de la base (comportement d'origine, conservé).
-import { requireAuth } from '../core/guards.js';
+import { ensureAuth } from '../core/guards.js';
 import { toast } from '../core/ui.js';
 import { mountNavbar } from './navbar.js';
 import { mountFooter } from './footer.js';
 import { confirmModal } from './modal.js';
 
 // Garde admin + montage chrome + init asynchrone ; les 5 pages admin bootent
-// uniquement si requireAuth renvoie un utilisateur (sinon redirection déjà faite).
-// user === null → requireAuth a déjà redirigé (location.replace) : on arrête tout ici.
-export function bootAdminPage(init) {
-  const user = requireAuth(['admin']);
+// uniquement si la garde renvoie un utilisateur (sinon redirection déjà faite).
+// Appelé sans await par les modules de page : l'amorçage est déjà asynchrone.
+export async function bootAdminPage(init) {
+  const user = await ensureAuth(['admin']);
   if (!user) return null;
   mountNavbar();
   mountFooter();

@@ -15,7 +15,8 @@ let provider = null;
 try {
   provider = await db.getProvider(id);
 } catch {
-  // Redirection côté client : serve.js sert 404.html avec le statut 200 (fallback statique).
+  // Fiche inconnue ou non approuvée : le repli se fait côté client (la page 404
+  // est rendue à l'URL demandée ; serve.js répond 404.html avec le statut 404).
   location.replace('/404.html');
 }
 
@@ -228,6 +229,6 @@ if (provider) {
   renderAbout(provider);
   const reviews = await db.listReviewsForProvider(provider.id);
   renderReviews(reviews);
-  renderQuote(provider, auth.current());
+  renderQuote(provider, await auth.ready());
   initReveal();
 }

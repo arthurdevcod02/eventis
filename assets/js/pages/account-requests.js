@@ -2,13 +2,13 @@
 // Actions selon le statut : accepted → « Clôturer la prestation » (confirmation) puis
 // « Laisser un avis » (étoiles 1–5 + commentaire) ; « Voir les messages » → Tâche 8.
 import { db } from '../core/db.js';
-import { requireAuth } from '../core/guards.js';
+import { ensureAuth } from '../core/guards.js';
 import { esc, icon, formatFCFA, formatDateFR, REQUEST_STATUS, EVENT_TYPES, toast, scrollIntoViewRespectful, reviewStatusBadgeHTML } from '../core/ui.js';
 import { mountNavbar } from '../components/navbar.js';
 import { mountFooter } from '../components/footer.js';
 
-const user = requireAuth(['client']);
-// user === null → requireAuth a déjà redirigé (location.replace) : on arrête tout ici.
+const user = await ensureAuth(['client']);
+// user === null → la garde a déjà redirigé (location.replace) : on arrête tout ici.
 if (user) {
   mountNavbar();
   mountFooter();

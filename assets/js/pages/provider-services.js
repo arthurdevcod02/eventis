@@ -4,14 +4,14 @@
 // on envoie toujours la liste complète courante).
 import { auth } from '../core/auth.js';
 import { db } from '../core/db.js';
-import { requireAuth } from '../core/guards.js';
+import { ensureAuth } from '../core/guards.js';
 import { esc, icon, formatFCFA, toast } from '../core/ui.js';
 import { mountNavbar } from '../components/navbar.js';
 import { mountFooter } from '../components/footer.js';
 import { openModal } from '../components/modal.js';
 
-const user = requireAuth(['prestataire']);
-// user === null → requireAuth a déjà redirigé (location.replace) : on arrête tout ici.
+const user = await ensureAuth(['prestataire']);
+// user === null → la garde a déjà redirigé (location.replace) : on arrête tout ici.
 if (user) {
   mountNavbar();
   mountFooter();

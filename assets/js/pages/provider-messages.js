@@ -2,14 +2,14 @@
 // fils (T8). Le module déduit les fils via db.listThreadsFor(user.id) : aucun
 // providerId nécessaire ici (les fils d'un compte prestataire sont ceux de la
 // fiche dont il est propriétaire).
-import { requireAuth } from '../core/guards.js';
+import { ensureAuth } from '../core/guards.js';
 import { toast } from '../core/ui.js';
 import { mountNavbar } from '../components/navbar.js';
 import { mountFooter } from '../components/footer.js';
 import { mountMessaging } from '../components/messaging.js';
 
-const user = requireAuth(['prestataire']);
-// user === null → requireAuth a déjà redirigé (location.replace) : on arrête tout ici.
+const user = await ensureAuth(['prestataire']);
+// user === null → la garde a déjà redirigé (location.replace) : on arrête tout ici.
 if (user) {
   mountNavbar();
   mountFooter();

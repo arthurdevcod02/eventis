@@ -5,7 +5,7 @@ import { db } from '../core/db.js';
 import { esc, icon, formatDateFR } from '../core/ui.js';
 import { bootAdminPage } from '../components/admin-actions.js';
 
-// user === null → requireAuth a déjà redirigé (location.replace) : bootAdminPage
+// user === null → la garde a déjà redirigé (location.replace) : bootAdminPage
 // ne monte rien et ne lance pas init (montage navbar/footer + erreur de chargement
 // annoncée en toast, comme les quatre autres pages admin).
 bootAdminPage(init);

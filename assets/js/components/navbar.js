@@ -137,5 +137,9 @@ export function mountNavbar(active = '') {
   };
 
   render();
+  // Mode réel : la session n'est pas encore lisible au premier rendu. ready()
+  // l'hydrate puis relance le rendu, sinon un visiteur connecté verrait
+  // « Se connecter » jusqu'au prochain clic.
+  auth.ready().then(render).catch(() => {});
   auth.onChange(render);
 }

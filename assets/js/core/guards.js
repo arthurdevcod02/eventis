@@ -15,3 +15,18 @@ export function requireAuth(roles = []) {
   }
   return user;
 }
+
+// Garde des pages protégées. En mode réel, la session n'est pas lisible de façon
+// synchrone : requireAuth appelé seul recevrait null avant l'hydratation et
+// enverrait un visiteur connecté sur la page de connexion. Cette version attend
+// l'hydratation du cache (auth.ready()) puis applique la même barre.
+// Une hydratation qui échoue (réseau, projet injoignable) = aucune session
+// connue = redirection de connexion, jamais un rendu « connecté » par défaut.
+export async function ensureAuth(roles = []) {
+  try {
+    await auth.ready();
+  } catch {
+    /* session indéterminable : requireAuth redirectionne */
+  }
+  return requireAuth(roles);
+}

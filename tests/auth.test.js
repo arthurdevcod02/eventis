@@ -57,3 +57,57 @@ test('comptes démo présents et signIn fonctionne', async () => {
   assert.equal((await auth.signIn('prestataire@demo.tg', 'demo1234')).role, 'prestataire');
   assert.equal((await auth.signIn('admin@demo.tg', 'demo1234')).role, 'admin');
 });
+
+// --- Contrat de garde de session (R21) -----------------------------------------
+// guards.requireAuth LIT la session en synchrone. Si AuthSupabase.current()
+// renvoyait une Promise (l'ancien code), la garde la jugeait toujours vraie et
+// laissait passer n'importe quel visiteur sur une page protégée en mode réel.
+// Ces tests figent le contrat avec un faux client Supabase : pas d'instance réelle.
+const { readFileSync } = await import('node:fs');
+
+function loadAuthSupabase(client) {
+  const src = readFileSync(new URL('../assets/js/core/auth-supabase.js', import.meta.url), 'utf8');
+  const fakeWindow = { supabase: { createClient: () => client } };
+  new Function('window', src)(fakeWindow); // script classique : il écrit dans window
+  const cfg = { SUPABASE_URL: 'https://fake.supabase.co', SUPABASE_ANON_KEY: 'anon' };
+  return new fakeWindow.EventisAuthSupabase.AuthSupabase(cfg, {});
+}
+
+const PROFILE_ROW = { id: 'u1', full_name: 'Kossi', email: 'kossi@example.tg', phone: '', role: 'client', suspended: false };
+
+function fakeClient({ session = true } = {}) {
+  const user = session ? { id: 'u1' } : null;
+  return {
+    auth: {
+      getSession: async () => ({ data: { session: user ? { user } : null } }),
+      onAuthStateChange: cb => { cb('INITIAL_SESSION', user ? { user } : null); return { data: { subscription: { unsubscribe() {} } } }; },
+      signOut: async () => {},
+    },
+    from: () => ({ select: () => ({ eq: () => ({ single: async () => ({ data: PROFILE_ROW, error: null }) }) }) }),
+  };
+}
+
+test('mode réel : current() est synchrone, null avant ready(), profil après ready()', async () => {
+  const auth = loadAuthSupabase(fakeClient());
+  assert.equal(auth.current(), null, 'current() ne doit pas renvoyer une Promise');
+  const p = auth.ready();
+  assert.ok(p instanceof Promise);
+  const user = await p;
+  assert.equal(user.id, 'u1');
+  assert.equal(auth.current().fullName, 'Kossi');
+  assert.equal(await auth.ready(), auth.current(), 'ready() est idempotent');
+});
+
+test('mode réel : aucune session enregistrée → current() reste null', async () => {
+  const auth = loadAuthSupabase(fakeClient({ session: false }));
+  assert.equal(await auth.ready(), null);
+  assert.equal(auth.current(), null);
+});
+
+test('demo et réel partagent le contrat ready()/current() lu par la garde', async () => {
+  const demo = makeAuth();
+  assert.equal(demo.current(), null);
+  assert.equal(await demo.ready(), null);
+  await demo.signIn('client@demo.tg', 'demo1234');
+  assert.deepEqual(await demo.ready(), demo.current());
+});
