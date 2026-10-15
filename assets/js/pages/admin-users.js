@@ -10,10 +10,13 @@ import { esc, icon, formatDateFR } from '../core/ui.js';
 import { bootAdminPage, confirmAction, refocusRow } from '../components/admin-actions.js';
 
 const ROLES = { client: 'Client', prestataire: 'Prestataire', admin: 'Administrateur' };
+// Identifiant du compte connecté, posé par init() avant le premier rendu : les
+// rendus le lisent, donc aucune dépendance à l'ordre de déclaration du module (M54).
+let currentUserId = null;
 
 // Une ligne sans action = administrateur OU votre propre compte (barrière UI).
 function isSuspendable(u) {
-  return u.role !== 'admin' && u.id !== user.id;
+  return u.role !== 'admin' && u.id !== currentUserId;
 }
 
 function rowHTML(u) {
@@ -28,7 +31,7 @@ function rowHTML(u) {
     : '<span class="none">—</span>';
   return `
     <tr>
-      <th scope="row" class="cell-title">${esc(name)}${u.id === user.id ? ' <span class="badge">Vous</span>' : ''}</th>
+      <th scope="row" class="cell-title">${esc(name)}${u.id === currentUserId ? ' <span class="badge">Vous</span>' : ''}</th>
       <td>${esc(u.email || '—')}</td>
       <td>${esc(ROLES[u.role] ?? u.role)}</td>
       <td>${esc(formatDateFR(u.createdAt) || '—')}</td>
@@ -97,10 +100,10 @@ const handlers = {
   reactivate: u => confirmSuspend(u, false),
 };
 
-async function init() {
+async function init(user) {
+  currentUserId = user.id; // posé avant tout rendu : les lignes ont besoin du compte connecté
   await reload();
 }
 
-// requireAuth renvoie le compte connecté : user.id sert à exclure sa propre ligne.
 // user === null (non admin) → bootAdminPage ne lance rien (redirection déjà faite).
-const user = bootAdminPage(init);
+bootAdminPage(init);

@@ -1,9 +1,9 @@
-// modal.js — modale accessible partagée (R17).
-// Comportement identique à la copie locale de provider-services.js:26-62 :
+// modal.js — modale accessible partagée (R17, regroupement achevé en T13-B).
 // role=dialog + aria-modal + aria-labelledby, Échap ferme, Tab piégé dans la
 // modale, retour du focus au déclencheur, fermetures [data-close] / [data-cancel],
 // focus initial sur le premier champ ( sinon le bouton de fermeture ).
-// Les pages T7/T9 gardent leur copie locale (refactor décidé en T13).
+// Consommateurs : les 5 pages admin (via admin-actions.js / admin-categories.js) et
+// l'espace prestataire (provider-requests.js, provider-services.js).
 import { esc, icon, toast } from '../core/ui.js';
 
 export function openModal(title, bodyHTML, onOpen) {

@@ -18,8 +18,9 @@ createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': MIME[extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
     res.end(body);
   } catch {
-    // Correction : lire 404.html AVANT d'envoyer les en-têtes (sinon writeHead(404) après writeHead(200) plante).
-    try { const notFound = await readFile(join(ROOT, '404.html')); res.writeHead(200, {'Content-Type': MIME['.html']}); res.end(notFound); }
+    // Chemin introuvable : la page 404 est lue AVANT les en-têtes (writeHead après
+    // writeHead planterait) et servie avec son vrai statut 404 — pas un 200 mensonger.
+    try { const notFound = await readFile(join(ROOT, '404.html')); res.writeHead(404, {'Content-Type': MIME['.html']}); res.end(notFound); }
     catch { res.writeHead(404); res.end('Not found'); }
   }
 }).listen(PORT, () => console.log(`Eventis → http://localhost:${PORT}`));

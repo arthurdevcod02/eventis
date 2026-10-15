@@ -143,7 +143,11 @@ const handlers = {
       bodyHTML: summaryHTML(p),
       confirmLabel: 'Approuver',
       run: () => db.setProviderStatus(p.id, 'approved'),
-      successMessage: `La fiche « ${p.businessName || 'sans nom'} » est approuvée : elle est visible publiquement.`,
+      // Aucune promesse de visibilité tant que le gérant est suspendu : la fiche
+      // reste masquée du catalogue (db.listProviders / getProvider, ruling R18).
+      successMessage: p.ownerSuspended
+        ? `La fiche « ${p.businessName || 'sans nom'} » est approuvée, mais son gérant est suspendu : elle reste masquée du catalogue public.`
+        : `La fiche « ${p.businessName || 'sans nom'} » est approuvée : elle est visible publiquement.`,
       reload: () => reload(p.id),
     });
   },
@@ -169,7 +173,9 @@ const handlers = {
       bodyHTML: summaryHTML(p),
       confirmLabel: 'Réactiver',
       run: () => db.setProviderStatus(p.id, 'approved'),
-      successMessage: `La fiche « ${p.businessName || 'sans nom'} » est de nouveau approuvée et visible.`,
+      successMessage: p.ownerSuspended
+        ? `La fiche « ${p.businessName || 'sans nom'} » est de nouveau approuvée, mais son gérant est suspendu : elle reste masquée du catalogue public.`
+        : `La fiche « ${p.businessName || 'sans nom'} » est de nouveau approuvée et visible.`,
       reload: () => reload(p.id),
     });
   },

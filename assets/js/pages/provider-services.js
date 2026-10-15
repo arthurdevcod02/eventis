@@ -8,6 +8,7 @@ import { requireAuth } from '../core/guards.js';
 import { esc, icon, formatFCFA, toast } from '../core/ui.js';
 import { mountNavbar } from '../components/navbar.js';
 import { mountFooter } from '../components/footer.js';
+import { openModal } from '../components/modal.js';
 
 const user = requireAuth(['prestataire']);
 // user === null → requireAuth a déjà redirigé (location.replace) : on arrête tout ici.
@@ -21,45 +22,6 @@ if (user) {
 
 let providerId = null;
 let services = [];
-
-// --- Modale accessible (focus dedans, Échap ferme, retour au déclencheur) -----
-function openModal(title, bodyHTML, onOpen) {
-  const trigger = document.activeElement;
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  overlay.innerHTML = `
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div class="modal__head">
-        <h2 id="modal-title">${esc(title)}</h2>
-        <button type="button" class="modal__close" data-close aria-label="Fermer la boîte de dialogue">${icon('close')}</button>
-      </div>
-      <div class="modal__body">${bodyHTML}</div>
-    </div>`;
-  document.body.appendChild(overlay);
-
-  const close = () => {
-    overlay.remove();
-    document.removeEventListener('keydown', onKey);
-    trigger?.focus?.({ preventScroll: true });
-  };
-  const onKey = e => {
-    if (e.key === 'Escape') { e.preventDefault(); close(); return; }
-    if (e.key !== 'Tab') return;
-    const els = [...overlay.querySelectorAll('button, input, select, textarea, [href]')]
-      .filter(el => !el.disabled && el.offsetParent !== null);
-    if (!els.length) return;
-    const first = els[0];
-    const last = els[els.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-  };
-  document.addEventListener('keydown', onKey);
-  overlay.querySelector('[data-close]').addEventListener('click', close);
-  overlay.querySelector('[data-cancel]')?.addEventListener('click', close);
-  onOpen?.(overlay, close);
-  const initial = overlay.querySelector('input, textarea, select, button:not(.modal__close)') ?? overlay.querySelector('.modal__close');
-  initial?.focus();
-}
 
 // --- Formulaire service (ajout en modale / édition inline) ----------------------
 function serviceFormHTML(prefix, s = {}) {

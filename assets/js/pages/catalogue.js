@@ -95,7 +95,6 @@ async function render() {
   document.querySelector('#empty').hidden = list.length > 0;
   grid.innerHTML = list.map(providerCardHTML).join('');
   syncURL();
-  initReveal(grid);
 }
 
 // --- Lecture des contrôles → état ----------------------------------------------
@@ -151,3 +150,4 @@ document.querySelector('#f-reset').addEventListener('click', resetFilters);
 document.querySelector('#empty-reset').addEventListener('click', resetFilters);
 
 render();
+initReveal();

@@ -6,7 +6,7 @@ import { auth } from '../core/auth.js';
 import { db } from '../core/db.js';
 import { isDemoMode } from '../core/config.js';
 import { requireAuth } from '../core/guards.js';
-import { esc, renderStars, formatDateFR, toast } from '../core/ui.js';
+import { esc, renderStars, formatDateFR, toast, reviewStatusBadgeHTML } from '../core/ui.js';
 import { mountNavbar } from '../components/navbar.js';
 import { mountFooter } from '../components/footer.js';
 
@@ -68,9 +68,7 @@ function initProfile(user) {
 // méthode qui montre au client ses propres avis non publiés (R22).
 function reviewItemHTML(v) {
   const provider = v.providerName || 'Prestataire';
-  const badge = v.visible
-    ? '<span class="badge badge--accepted">Publié</span>'
-    : '<span class="badge badge--progress">En attente de modération</span>';
+  const badge = reviewStatusBadgeHTML(v.visible);
   const comment = v.comment ? esc(v.comment) : '<span class="muted">Aucun commentaire rédigé.</span>';
   return `
     <li class="my-reviews__item">

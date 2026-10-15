@@ -4,6 +4,7 @@ import { auth } from '../core/auth.js';
 import { toast, icon } from '../core/ui.js';
 import { mountNavbar } from '../components/navbar.js';
 import { mountFooter } from '../components/footer.js';
+import { mountPasswordToggles } from '../components/password-toggle.js';
 
 mountNavbar();
 mountFooter();
@@ -19,18 +20,7 @@ const roleInputs = [...form.querySelectorAll('input[name="role"]')];
 // Icônes des cartes rôle.
 document.querySelectorAll('.role-card__icon').forEach(el => { el.innerHTML = icon(el.dataset.icon); });
 
-// Boutons œil : bascule du type du champ mot de passe.
-document.querySelectorAll('.pw-toggle').forEach(btn => {
-  const input = document.getElementById(btn.dataset.target);
-  btn.innerHTML = icon('eye');
-  btn.addEventListener('click', () => {
-    const show = input.type === 'password';
-    input.type = show ? 'text' : 'password';
-    btn.innerHTML = icon(show ? 'eye-off' : 'eye');
-    btn.setAttribute('aria-pressed', String(show));
-    btn.setAttribute('aria-label', show ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
-  });
-});
+mountPasswordToggles();
 
 // Rôle pré-sélectionné via l'URL (?role=prestataire depuis la home, par ex.) + état visuel des cartes.
 const wantedRole = new URLSearchParams(location.search).get('role');

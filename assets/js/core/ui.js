@@ -90,6 +90,15 @@ export function renderStars(avg) {
   return out + '</span>';
 }
 
+// --- État de publication d'un avis ---------------------------------------------
+// Libellé du badge, source unique (consommé par « Mes avis » et par la fiche de
+// demande) : l'état est porté par du TEXTE, jamais par la couleur seule.
+export function reviewStatusBadgeHTML(visible) {
+  return visible
+    ? '<span class="badge badge--accepted">Publié</span>'
+    : '<span class="badge badge--progress">En attente de modération</span>';
+}
+
 // --- Carte prestataire (source unique partagée par l'accueil et le catalogue) --
 export function providerCardHTML(p) {
   return `
@@ -123,16 +132,17 @@ export function toast(message, type = 'info') {
 }
 
 // --- Révélations au scroll (GSAP) --------------------------------------------
-export function initReveal(scope) {
-  const root = scope ?? (typeof document !== 'undefined' ? document : null);
-  if (!root || typeof window === 'undefined') return;
-  const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  if (reduce) return; // contenu laissé visible tel quel
+// Appliquée une fois par page sur le document : les grilles re-rendues (catalogue)
+// ne portent volontairement pas data-reveal, leurs cartes ne se ré-animent donc
+// pas à chaque filtre.
+export function initReveal() {
+  if (typeof document === 'undefined' || typeof window === 'undefined') return;
+  if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return; // contenu laissé visible tel quel
   const gsap = window.gsap;
   if (!gsap) return;
   let ScrollTrigger = window.ScrollTrigger;
   try { if (ScrollTrigger) gsap.registerPlugin(ScrollTrigger); } catch { /* ScrollTrigger indisponible */ }
-  const els = gsap.utils.toArray('[data-reveal]', root);
+  const els = [...document.querySelectorAll('[data-reveal]')];
   if (!els.length) return;
   gsap.set(els, { opacity: 0, y: 24 });
   els.forEach(el => {
@@ -143,4 +153,14 @@ export function initReveal(scope) {
       gsap.to(el, { opacity: 1, y: 0, duration: .7, ease: 'power2.out', delay: .1 });
     }
   });
+}
+
+// --- Défilement vers un élément (repli instantané si mouvement réduit) ---------
+// `scroll-behavior: auto` de base.css ne s'applique pas à scrollIntoView explicite :
+// le `behavior:` doit donc être choisi ici, sinon l'ouverture d'un détail demandait
+// un défilement animé malgré prefers-reduced-motion.
+export function scrollIntoViewRespectful(el) {
+  if (!el) return;
+  const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
 }

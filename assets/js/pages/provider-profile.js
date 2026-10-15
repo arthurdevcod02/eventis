@@ -68,7 +68,8 @@ function currentPatch() {
   };
 }
 
-// --- Aperçu « ce que voit le client » (R7 : providerCardHTML + styles home.css) --
+// --- Aperçu « ce que voit le client » (R7 : providerCardHTML + styles components.css,
+//     déplacés depuis home.css par le ruling R29) --------------------------------
 function renderPreview() {
   const slot = $('preview-slot');
   if (!provider) {

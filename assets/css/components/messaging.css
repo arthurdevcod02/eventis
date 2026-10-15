@@ -19,7 +19,11 @@
   text-align: left; padding: var(--space-3); border: 0; border-radius: var(--radius-sm);
   background: none; color: inherit; font: inherit; transition: background .15s; }
 .thread-item:hover { background: var(--bg-alt); }
-.thread-item.is-active { background: rgba(249,115,22,.1); }
+/* Fil actif : fond d'accentuation via --accent-tint (et non rgba(.1) cru) : le
+   littéral .1 rendu sur #1F1F1F ne faisait que #35271E (1,15:1, invisible en
+   sombre). --accent-tint monte à .16 en thème sombre (#422C1E) et l'état reste
+   aussi porté par le nom en gras (700), pas par la seule teinte. */
+.thread-item.is-active { background: var(--accent-tint); }
 .thread-item__name { font-weight: 700; font-family: var(--font-title); min-width: 0;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .thread-item__time { color: var(--text-muted); font-size: .8rem; white-space: nowrap; }
@@ -27,7 +31,7 @@
   min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .thread-item__badge { display: inline-flex; align-items: center; justify-content: center;
   min-width: 22px; height: 22px; padding: 0 6px; border-radius: 999px;
-  background: var(--color-orange); color: #fff; font-size: .75rem; font-weight: 700; }
+  background: var(--color-orange); color: var(--on-accent); font-size: .75rem; font-weight: 700; }
 
 /* --- Colonne : conversation --------------------------------------------------- */
 .thread-view { display: grid; grid-template-rows: auto 1fr auto; min-width: 0; min-height: 0; }
@@ -36,7 +40,8 @@
 .thread-view__back { display: none; align-items: center; justify-content: center;
   width: 44px; height: 44px; flex: none; border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--surface); color: var(--text); }
-.thread-view__back:hover { border-color: var(--color-orange); color: var(--color-orange); }
+/* Bouton retour (icône, non textuel 3:1) : --accent-text au lieu de #F97316. */
+.thread-view__back:hover { border-color: var(--accent-text); color: var(--accent-text); }
 .thread-view__title { min-width: 0; display: grid; gap: 1px; }
 .thread-view__title h2 { font-size: 1.1rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .thread-view__title .muted { font-size: .85rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -47,10 +52,12 @@
 .bubble { max-width: min(75%, 560px); padding: 10px var(--space-4); border-radius: var(--radius-md);
   background: var(--surface); border: 1px solid var(--border); overflow-wrap: anywhere; }
 .bubble--own { align-self: flex-end; background: var(--color-orange); border-color: var(--color-orange);
-  color: #fff; }
+  color: var(--on-accent); }
 .bubble__meta { display: block; margin-top: 4px; font-size: .75rem;
   color: var(--text-muted); }
-.bubble--own .bubble__meta { color: rgba(255,255,255,.85); }
+/* Méta de la bulle own : noir composé sur l'orange (6,74:1) — l'ancien blanc à
+   85 % d'alpha rendait un orange clair quasi confondu avec le fond de la bulle. */
+.bubble--own .bubble__meta { color: rgba(17, 17, 17, .78); }
 
 /* --- Compositeur / verrou ------------------------------------------------------ */
 .thread-view__composer { border-top: 1px solid var(--border); padding: var(--space-3) var(--space-4);
@@ -60,8 +67,8 @@
 .thread-view__composer textarea { font: inherit; color: var(--text); background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px;
   min-height: 48px; max-height: 160px; resize: vertical; }
-.thread-view__composer textarea:focus-visible { border-color: var(--color-orange);
-  box-shadow: 0 0 0 3px rgba(249,115,22,.18); }
+.thread-view__composer textarea:focus-visible { border-color: var(--accent-text);
+  box-shadow: 0 0 0 4px var(--focus-halo); }
 .thread-view__composer textarea[disabled] { background: var(--bg-alt); color: var(--text-muted); }
 .thread-view__hint { font-size: .8rem; color: var(--text-muted); }
 .thread-view__lock { display: flex; align-items: center; gap: var(--space-3);
@@ -72,7 +79,7 @@
 /* --- États vides ---------------------------------------------------------------- */
 .thread-view__empty { grid-row: 1 / -1; display: grid; place-content: center; justify-items: center;
   gap: var(--space-2); text-align: center; color: var(--text-muted); padding: var(--space-5); }
-.thread-view__empty svg { color: var(--color-orange); }
+.thread-view__empty svg { color: var(--accent-text); }
 
 /* --- Mobile : liste plein écran, conversation avec retour ------------------------- */
 @media (max-width: 760px) {

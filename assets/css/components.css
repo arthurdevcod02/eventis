@@ -3,33 +3,45 @@
   border-radius: var(--radius-sm); border: 1px solid transparent; font-weight: 600; text-decoration: none;
   transition: background .2s, color .2s, border-color .2s, transform .15s; }
 .btn:active { transform: translateY(1px); }
-.btn--primary { background: var(--color-orange); color: #fff; }
+/* Texte sur remplissage de marque : noir #111111 sur #F97316 = 6,74:1 et sur
+   #EA580C (état survolé) = 5,30:1 (mesurés), alors que blanc sur #F97316 tombait
+   à 2,80:1 dans les deux thèmes (ruling R19 repris ici pour les boutons). */
+.btn--primary { background: var(--color-orange); color: var(--on-accent); }
 .btn--primary:hover { background: var(--color-orange-hover); }
 .btn--outline { background: transparent; color: var(--text); border-color: var(--border); }
-.btn--outline:hover { border-color: var(--color-orange); color: var(--color-orange); }
+.btn--outline:hover { border-color: var(--accent-text); }
 .btn--ghost { background: transparent; color: var(--text); }
 .btn--ghost:hover { background: var(--bg-alt); }
-.btn--success { background: var(--color-green); color: #fff; }
-.btn--success:hover { background: var(--color-green-dark); }
+/* Vert : blanc sur #16A34A = 3,30:1 (échec du AA texte normal) ; blanc sur
+   #166534 = 7,13:1 et noir sur #16A34A = 5,73:1 — les deux états passent. */
+.btn--success { background: var(--success-fill); color: var(--on-success); }
+.btn--success:hover { background: var(--color-green); color: var(--on-accent); }
 .btn--sm { padding: 8px 14px; min-height: 36px; font-size: .875rem; }
 .btn--block { width: 100%; }
 .btn[disabled] { opacity: .5; cursor: not-allowed; }
 
-/* Badges */
+/* Badges — le texte d'un badge est toujours du texte « normal » (12 px) : il
+   consomme --text (17,32:1 sur #F5F5F5 en clair, 16,29:1 sur #181818 en sombre).
+   --text-muted ne passait plus que 4,43:1 sur le fond altéré, 4,16:1 sur la
+   variante « envoyée » et 4,09:1 sur la variante « fermée ». Les états
+   conservent leur fond propre (et donc leur hiérarchie), l'information reste
+   portée par le libellé texte et non par la couleur seule. */
 .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px;
-  font-size: .75rem; font-weight: 600; background: var(--bg-alt); color: var(--text-muted); }
-.badge--verified { background: rgba(22,163,74,.12); color: var(--color-green-dark); }
-[data-theme="dark"] .badge--verified { color: #4ADE80; }
-.badge--sent { background: rgba(107,114,128,.12); color: var(--text-muted); }
-/* Badge « en attente / en cours » (R19) : fond orange plein + texte noir
-   (#111111 sur #F97316 ≈ 6.8:1, AA dans les deux thèmes — tokens fixes,
-   non affectés par [data-theme="dark"]). L'ancienne variante translucide
-   (#EA580C sur 12 % d'orange) tombait à ≈ 3.5:1 pour du texte 12 px. */
-.badge--progress { background: var(--color-orange); color: var(--color-black); }
-.badge--accepted { background: rgba(22,163,74,.12); color: var(--color-green-dark); }
-[data-theme="dark"] .badge--accepted { color: #4ADE80; }
-.badge--declined { background: rgba(220,38,38,.12); color: #B91C1C; }
-.badge--closed { background: rgba(17,17,17,.08); color: var(--text-muted); }
+  font-size: .75rem; font-weight: 600; background: var(--bg-alt); color: var(--text); }
+/* « Vérifié » vit sur les photos de vignette : le fond doit être opaque, sinon
+   la teinte translucide se compose avec l'image (mesuré 1,44:1 en clair,
+   1,50:1 en sombre). */
+.badge--verified { background: var(--surface); color: var(--success-text); }
+.badge--sent { background: var(--bg-alt); color: var(--text); }
+/* Badge « en attente / en cours » (ruling R19 repris) : fond orange plein et
+   texte noir #111111 = 6,74:1 — les tokens de remplissage --color-orange et
+   --on-accent sont constants, le badge reste donc conforme dans les deux thèmes.
+   L'ancienne variante translucide (#EA580C sur 12 % d'orange) tombait à 3,14:1
+   pour du texte 12 px. */
+.badge--progress { background: var(--color-orange); color: var(--on-accent); }
+.badge--accepted { background: var(--success-tint); color: var(--success-text); }
+.badge--declined { background: var(--danger-tint); color: var(--danger-text); }
+.badge--closed { background: var(--bg-alt); color: var(--text); }
 
 /* Cartes */
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
@@ -40,31 +52,59 @@
 .card__title { font-family: var(--font-title); font-size: 1.125rem; font-weight: 700; }
 .card__meta { color: var(--text-muted); font-size: .875rem; }
 
+/* Carte prestataire (ruling R29) — règles DÉPLACÉES telles quelles depuis
+   pages/home.css (mêmes sélecteurs, mêmes valeurs, aucune media query) parce que
+   trois feuilles de page la rendent : index.html, catalogue.html et
+   espace-prestataire/profil.html (aperçu R7). Les trois chargent
+   assets/css/components.css (vérifié page par page au lot B1), la règle vit donc
+   désormais dans la feuille des composants partagés. */
+.provider-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-5); }
+.provider-card { display: grid; grid-template-rows: auto 1fr; text-decoration: none;
+  color: var(--text); }
+.provider-card__media { position: relative; }
+.provider-card__media .badge--verified { position: absolute; top: var(--space-3);
+  left: var(--space-3); box-shadow: var(--shadow-sm); }
+.provider-card__price { font-weight: 700; }
+
 /* Formulaires */
 .field { display: grid; gap: 6px; margin-bottom: var(--space-4); }
 .field label { font-weight: 600; font-size: .9rem; }
 .field input, .field select, .field textarea { font: inherit; color: var(--text); background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; min-height: 44px; }
-.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--color-orange); outline: none;
-  box-shadow: 0 0 0 3px rgba(249,115,22,.18); }
-.field .error { color: #DC2626; font-size: .8rem; }
-.form-errors { background: rgba(220,38,38,.08); color: #B91C1C; border-radius: var(--radius-sm);
+/* Focus : l'anneau n'est JAMAIS supprimé (règle globale du lot) — le `outline: none`
+   livré ici neutralisait le :focus-visible global sur tous les champs (sonde : aucun
+   anneau mesurable, ratio 0). L'anneau consomme --focus-ring (3,56:1 sur blanc en
+   clair, 5,88:1 sur #1F1F1F en sombre) et le halo --focus-halo, devenu visible en
+   thème sombre (l'ancien rgba(249,115,22,.18) se composait en #462E1D, invisible). */
+.field input:focus, .field select:focus, .field textarea:focus { border-color: var(--accent-text); }
+.field input:focus-visible, .field select:focus-visible, .field textarea:focus-visible {
+  outline: 3px solid var(--focus-ring); outline-offset: 2px; box-shadow: 0 0 0 4px var(--focus-halo); }
+.field .error { color: var(--danger-text); font-size: .8rem; }
+/* Bandeau d'erreurs de formulaire : --danger-tint + --danger-text = 5,37:1 en
+   clair (#FBE5E5) et 4,99:1 en sombre (#492121) — mesurés. */
+.form-errors { background: var(--danger-tint); color: var(--danger-text); border-radius: var(--radius-sm);
   padding: var(--space-3) var(--space-4); margin-bottom: var(--space-4); font-size: .9rem; }
 
-/* Skeletons */
-.skeleton { position: relative; overflow: hidden; background: var(--bg-alt); border-radius: var(--radius-sm); }
+/* Skeletons — la base et le brillant sont des tokens : en thème sombre le dégradé
+   blanc fixe clignotait au-dessus du noir (contraste 5,3:1, agressif) ; il consomme
+   désormais --skeleton-shine, calibré par thème. */
+.skeleton { position: relative; overflow: hidden; background: var(--skeleton); border-radius: var(--radius-sm); }
 .skeleton::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,.5), transparent);
+  background: linear-gradient(90deg, transparent, var(--skeleton-shine), transparent);
   animation: shimmer 1.4s infinite; }
 @keyframes shimmer { to { transform: translateX(100%); } }
 
 /* Toasts */
 #toasts { position: fixed; bottom: var(--space-5); left: 50%; transform: translateX(-50%);
   display: grid; gap: var(--space-2); z-index: 100; width: min(420px, calc(100vw - 32px)); }
-.toast { background: var(--color-black); color: #fff; padding: 14px 18px; border-radius: var(--radius-sm);
-  box-shadow: var(--shadow-lg); font-size: .9rem; }
-.toast--success { background: var(--color-green); }
-.toast--error { background: #DC2626; }
+.toast { background: var(--color-black); color: var(--color-white); padding: 14px 18px;
+  border-radius: var(--radius-sm); box-shadow: var(--shadow-lg); font-size: .9rem; }
+/* En thème sombre le toast noir se confondait avec la page noire (info/action
+   pourtant essentielle) : il passe sur --surface, plus clair que le fond. */
+[data-theme="dark"] .toast { background: var(--surface); border: 1px solid var(--border); }
+.toast--success { background: var(--success-fill); color: var(--on-success); }
+.toast--error { background: var(--danger-fill); color: var(--color-white); }
 
 /* Tableaux (admin) */
 .table { width: 100%; border-collapse: collapse; font-size: .9rem; }
@@ -76,12 +116,15 @@
 .empty svg { margin-inline: auto; margin-bottom: var(--space-3); }
 
 /* Bannière mode démo */
-.demo-banner { background: var(--color-black); color: #fff; text-align: center; font-size: .8rem;
+.demo-banner { background: var(--color-black); color: var(--color-white); text-align: center; font-size: .8rem;
   padding: 6px var(--space-4); position: sticky; top: 0; z-index: 60; }
 .demo-banner strong { color: var(--color-orange); }
 
-/* Étoiles */
-.stars { display: inline-flex; gap: 2px; color: var(--color-orange); }
+/* Étoiles — indicateur non textuel : --accent-text mesure 3,56:1 sur le fond
+   blanc (l'ancien #F97316 restait à 2,80:1, sous le seuil 3:1). La note reste
+   aussi écrite en toutes lettres à côté (« 4,8 »), l'information ne dépend donc
+   pas de la couleur seule. */
+.stars { display: inline-flex; gap: 2px; color: var(--accent-text); }
 .stars .off { color: var(--border); }
 
 /* Navigation */
@@ -89,23 +132,29 @@
 .nav__inner { display: flex; align-items: center; gap: var(--space-5); min-height: var(--nav-h); }
 .nav__logo { font-family: var(--font-title); font-weight: 800; font-size: 1.5rem; text-decoration: none;
   color: var(--text); letter-spacing: -.02em; }
-.nav__logo span { color: var(--color-orange); }
+/* Le point du logo est du texte grand (24 px / 800) : seuil 3:1, atteint avec
+   --accent-text (3,56:1). #F97316 plafonnait à 2,80:1. */
+.nav__logo span { color: var(--accent-text); }
 .nav__links { display: flex; align-items: center; gap: var(--space-5); list-style: none; margin: 0; padding: 0; }
 .nav__links a { text-decoration: none; font-weight: 500; min-height: 44px; display: inline-flex;
   align-items: center; color: var(--text-muted); transition: color .2s; }
 .nav__links a:hover { color: var(--text); }
-.nav__links a[aria-current="page"] { color: var(--color-orange); font-weight: 600; }
+/* Lien de page active : aucun orange n'atteint 4,5:1 sur blanc pour du texte
+   16 px (mesuré 2,80:1 puis 3,56:1) → le lien actif prend la couleur du texte
+   courant et se distingue par le soulignement, pas par la seule couleur. */
+.nav__links a[aria-current="page"] { color: var(--text); font-weight: 600;
+  text-decoration: underline; text-underline-offset: 6px; text-decoration-thickness: 2px; }
 .nav__actions { display: flex; align-items: center; gap: var(--space-3); margin-left: auto; }
 .nav__theme, .nav__burger { display: inline-flex; align-items: center; justify-content: center;
   width: 44px; height: 44px; border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--surface); color: var(--text); }
-.nav__theme:hover, .nav__burger:hover { border-color: var(--color-orange); color: var(--color-orange); }
+.nav__theme:hover, .nav__burger:hover { border-color: var(--accent-text); color: var(--accent-text); }
 .nav__burger { display: none; }
 .nav__account { position: relative; }
 .nav__account-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px 14px;
   border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface);
   color: var(--text); font-weight: 600; }
-.nav__account-btn:hover { border-color: var(--color-orange); }
+.nav__account-btn:hover { border-color: var(--accent-text); }
 .nav__menu { position: absolute; right: 0; top: calc(100% + 8px); min-width: 220px; background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-md);
   padding: var(--space-2); display: grid; z-index: 60; }
@@ -120,33 +169,39 @@
 .nav__mobile a { font-family: var(--font-title); font-size: 1.5rem; font-weight: 700; text-decoration: none;
   padding: var(--space-3) 0; min-height: 44px; display: flex; align-items: center; }
 .nav__mobile-links { list-style: none; margin: 0; padding: 0; display: grid; }
-.nav__mobile-links a[aria-current="page"] { color: var(--color-orange); }
+.nav__mobile-links a[aria-current="page"] { color: var(--accent-text); text-decoration: underline;
+  text-underline-offset: 6px; text-decoration-thickness: 2px; }
 .nav__mobile .btn { margin-top: var(--space-4); }
 .nav__close { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
   border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface); color: var(--text); }
 .nav__mobile-actions { display: grid; gap: var(--space-3); margin-top: var(--space-5); }
 .nav__mobile-actions .nav__account { display: block; }
 
-/* Pied de page */
+/* Pied de page — le pied vit sur --bg-alt (#F5F5F5 en clair, #181818 en sombre) :
+   --text-muted y mesurait 4,43:1 (écart minimal mais échec). Toutes les copies du
+   pied prennent donc --text (17,32:1 en clair, 16,29:1 en sombre), les liens se
+   distinguent au survol par le soulignement et non par la couleur. */
 .footer { background: var(--bg-alt); border-top: 1px solid var(--border); margin-top: var(--space-8); }
 .footer__cols { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: var(--space-6);
   padding-block: var(--space-7); }
 .footer__brand { font-family: var(--font-title); font-weight: 800; font-size: 1.25rem; }
-.footer__brand span { color: var(--color-orange); }
+.footer__brand span { color: var(--accent-text); }
 .footer h2, .footer h3 { font-size: .8rem; text-transform: uppercase; letter-spacing: .04em;
-  color: var(--text-muted); margin-bottom: var(--space-3); }
+  color: var(--text); margin-bottom: var(--space-3); }
 .footer ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-2); }
-.footer a { color: var(--text-muted); text-decoration: none; }
+.footer a { color: var(--text); text-decoration: none; }
 .footer li a { display: inline-flex; align-items: center; gap: 8px; min-height: 32px; }
 .footer li svg { width: 16px; height: 16px; flex: none; }
-.footer a:hover { color: var(--color-orange); }
-.footer__demo { font-size: .8rem; color: var(--text-muted); margin-top: var(--space-3); }
+.footer a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.footer .muted { color: var(--text); }
+.footer__demo { font-size: .8rem; color: var(--text); margin-top: var(--space-3); }
 .footer__bottom { border-top: 1px solid var(--border); padding-block: var(--space-4);
   display: flex; flex-wrap: wrap; gap: var(--space-3); justify-content: space-between;
-  font-size: .8rem; color: var(--text-muted); }
+  font-size: .8rem; color: var(--text); }
 
-/* Modales */
-.modal-overlay { position: fixed; inset: 0; z-index: 90; background: rgba(17,17,17,.55);
+/* Modales — le voile passe par --overlay : à .55 sur une page déjà noire, la
+   modale sombre n'était plus détachée du fond. */
+.modal-overlay { position: fixed; inset: 0; z-index: 90; background: var(--overlay);
   display: grid; place-items: center; padding: var(--space-5); }
 .modal-overlay[hidden] { display: none; }
 .modal { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow-lg);
@@ -163,7 +218,8 @@
 .pagination { display: flex; gap: var(--space-2); justify-content: center; padding-block: var(--space-5); }
 .pagination button { min-width: 44px; min-height: 44px; border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--surface); color: var(--text); font-weight: 600; }
-.pagination button[aria-current="page"] { background: var(--color-orange); border-color: var(--color-orange); color: #fff; }
+.pagination button[aria-current="page"] { background: var(--color-orange);
+  border-color: var(--color-orange); color: var(--on-accent); }
 
 /* Responsive navigation */
 @media (max-width: 840px) {

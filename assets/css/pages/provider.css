@@ -3,20 +3,25 @@
    aperçu de la fiche publique). La structure (.tabs, .dashboard, .request-*,
    .profile-*) est mutualisée avec l'espace client dans account.css. */
 
-/* Bandeau « fiche en cours d'examen » (Étape 1) */
+/* Bandeau « fiche en cours d'examen » (Étape 1) — fond teinté et bordure via les
+   tokens sémantiques : l'ancien rgba(249,115,22,.1) rendu sur #1F1F1F ne faisait
+   que #35271E (1,15:1, invisible en sombre) ; --accent-tint monte à .16 en sombre. */
 .notice--pending { display: flex; gap: var(--space-3); align-items: flex-start;
-  background: rgba(249,115,22,.1); border: 1px solid rgba(249,115,22,.35);
+  background: var(--accent-tint); border: 1px solid var(--accent-text);
   border-radius: var(--radius-md); padding: var(--space-4) var(--space-5); }
-.notice--pending svg { flex: none; color: var(--color-orange); margin-top: 2px; }
+.notice--pending svg { flex: none; color: var(--accent-text); margin-top: 2px; }
 
 /* Dashboard : 4 cartes stats au lieu de 3 */
 .dashboard__stats--4 { grid-template-columns: repeat(4, 1fr); }
 @media (max-width: 1000px) { .dashboard__stats--4 { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 560px) { .dashboard__stats--4 { grid-template-columns: 1fr; } }
 
-/* Pastille « non lu » sur les cartes demandes */
+/* Pastille « non lu » : texte 12,5 px (texte courant, seuil 4,5:1) — aucun orange
+   sur fond blanc n'y parvient ; elle prend donc le remplissage de marque
+   --accent-text et un texte noir --on-accent (5,30:1 en clair, 6,74:1 en sombre,
+   tokens constants dans les deux thèmes). L'état reste aussi porté par le libellé. */
 .unread-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 2px 10px;
-  border-radius: 999px; background: rgba(249,115,22,.14); color: var(--color-orange-hover);
+  border-radius: 999px; background: var(--accent-text); color: var(--on-accent);
   font-size: .78rem; font-weight: 700; }
 .request-card__foot { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
   flex-wrap: wrap; color: var(--text-muted); font-size: .875rem; }

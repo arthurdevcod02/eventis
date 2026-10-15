@@ -3,7 +3,8 @@
 import { auth } from '../core/auth.js';
 import { isDemoMode, CONFIG } from '../core/config.js';
 import { HOME_FOR } from '../core/guards.js';
-import { toast, icon, esc } from '../core/ui.js';
+import { toast, esc } from '../core/ui.js';
+import { mountPasswordToggles } from '../components/password-toggle.js';
 import { mountNavbar } from '../components/navbar.js';
 import { mountFooter } from '../components/footer.js';
 
@@ -16,18 +17,7 @@ const passwordInput = document.querySelector('#l-password');
 const errorsBox = document.querySelector('#login-errors');
 const submitBtn = form.querySelector('button[type="submit"]');
 
-// Boutons œil : bascule du type du champ mot de passe.
-document.querySelectorAll('.pw-toggle').forEach(btn => {
-  const input = document.getElementById(btn.dataset.target);
-  btn.innerHTML = icon('eye');
-  btn.addEventListener('click', () => {
-    const show = input.type === 'password';
-    input.type = show ? 'text' : 'password';
-    btn.innerHTML = icon(show ? 'eye-off' : 'eye');
-    btn.setAttribute('aria-pressed', String(show));
-    btn.setAttribute('aria-label', show ? 'Masquer le mot de passe' : 'Afficher le mot de passe');
-  });
-});
+mountPasswordToggles();
 
 // Identifiants démo : visibles uniquement en mode démo, avec un bouton « Remplir » par compte.
 if (isDemoMode()) {

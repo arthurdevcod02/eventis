@@ -16,11 +16,11 @@
 .pw-toggle { position: absolute; top: 50%; right: 4px; transform: translateY(-50%);
   display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px;
   border: 0; border-radius: var(--radius-sm); background: none; color: var(--text-muted); }
-.pw-toggle:hover { color: var(--color-orange); }
+.pw-toggle:hover { color: var(--accent-text); }
 
 /* Case à cocher « Afficher les identifiants démo » */
 .auth-check { display: flex; align-items: center; gap: var(--space-2); min-height: 44px; cursor: pointer; }
-.auth-check input { width: 20px; height: 20px; accent-color: var(--color-orange); }
+.auth-check input { width: 20px; height: 20px; accent-color: var(--accent-text); }
 
 /* Panneau identifiants démo (rempli par auth-login.js en mode démo uniquement) */
 #demo-toggle-wrap[hidden], .demo-accounts[hidden] { display: none; }
@@ -38,17 +38,24 @@
 .role-card { display: grid; gap: var(--space-2); align-content: start; padding: var(--space-4);
   border: 2px solid var(--border); border-radius: var(--radius-md); cursor: pointer;
   background: var(--surface); transition: border-color .2s, background .2s; }
-.role-card:hover { border-color: var(--color-orange); }
-.role-card.is-selected { border-color: var(--color-orange); background: rgba(249,115,22,.06); }
-.role-card input[type="radio"] { width: 20px; height: 20px; margin: 0; accent-color: var(--color-orange); flex: none; }
+/* Carte rôle : l'état sélectionné est porté par la bordure --accent-text
+   (3,56:1 sur surface en clair, 5,88:1 en sombre), le fond teinté --accent-tint
+   ET le bouton radio natif coché — jamais par la couleur seule. L'ancien fond
+   rgba(249,115,22,.06) disparaissait en thème sombre (1,10:1 sur #1F1F1F). */
+.role-card:hover { border-color: var(--accent-text); }
+.role-card.is-selected { border-color: var(--accent-text); background: var(--accent-tint); }
+.role-card input[type="radio"] { width: 20px; height: 20px; margin: 0; accent-color: var(--accent-text); flex: none; }
 .role-card__head { display: flex; align-items: center; gap: var(--space-2);
   font-family: var(--font-title); font-weight: 700; line-height: 1.2; }
-.role-card__icon { display: inline-flex; color: var(--color-orange); flex: none; }
+.role-card__icon { display: inline-flex; color: var(--accent-text); flex: none; }
 .role-card__desc { font-size: .85rem; }
 
-/* Liens d'appoint et retour à l'accueil */
+/* Liens d'appoint et retour à l'accueil — texte courant (14,4 px) : aucun orange
+   de la palette n'atteint 4,5:1 sur blanc (ruling repris du pied de page) : le
+   lien prend la couleur du texte courant et se distingue par le soulignement. */
 .auth-alt { margin-top: var(--space-4); font-size: .9rem; text-align: center; }
-.auth-alt a { color: var(--color-orange); font-weight: 600; }
+.auth-alt a { color: var(--text); font-weight: 600; text-decoration: underline;
+  text-underline-offset: 3px; }
 .auth-back { margin-top: var(--space-5); }
 
 /* Mobile : cartes rôle empilées, carte moins rembourrée */

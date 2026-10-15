@@ -13,8 +13,8 @@
   <link rel="stylesheet" href="/assets/css/tokens.css">
   <link rel="stylesheet" href="/assets/css/base.css">
   <link rel="stylesheet" href="/assets/css/components.css">
-  <!-- .provider-grid / .provider-card vivent dans home.css (source unique — ruling R2 : ni déplacement ni duplication) -->
-  <link rel="stylesheet" href="/assets/css/pages/home.css">
+  <!-- .provider-grid / .provider-card vivent dans components.css depuis le ruling R29 :
+       la carte est rendue par trois feuilles de page, cette page ne charge plus home.css -->
   <link rel="stylesheet" href="/assets/css/pages/catalogue.css">
   <script src="/assets/vendor/gsap.min.js" defer></script>
   <script src="/assets/vendor/ScrollTrigger.min.js" defer></script>
@@ -26,12 +26,14 @@
   <main id="main">
     <section class="section">
       <div class="container">
-        <header class="catalog-head">
+        <header class="catalog-head" data-reveal>
           <h1>Trouver un prestataire</h1>
           <p id="results-meta" class="muted" role="status"></p>
         </header>
         <div class="catalog-layout">
-          <aside class="catalog-filters" aria-label="Filtres de recherche">
+          <!-- data-reveal uniquement sur les blocs statiques : la grille #results est
+               re-rendue à chaque filtre, ses cartes ne doivent pas se ré-animer. -->
+          <aside class="catalog-filters" aria-label="Filtres de recherche" data-reveal>
             <details class="filters-toggle" id="filters-toggle" open>
               <summary>Filtres</summary>
               <form id="filters" class="filter-panel card">

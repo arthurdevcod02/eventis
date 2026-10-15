@@ -1,6 +1,7 @@
 /* Page catalogue Eventis — disposition 2 colonnes, panneau de filtres repliable.
-   Les styles de la carte prestataire (.provider-grid, .provider-card) sont réutilisés
-   depuis home.css : source unique, aucune règle dupliquée ni déplacée (ruling R2). */
+   Les styles de la carte prestataire (.provider-grid, .provider-card) vivent dans
+   components.css depuis le ruling R29 (déplacement depuis home.css, mêmes valeurs) :
+   source unique pour les trois pages qui rendent une carte, aucune règle dupliquée. */
 
 /* En-tête de page : titre + compteur de résultats */
 .catalog-head { display: flex; align-items: baseline; justify-content: space-between;
@@ -21,7 +22,7 @@
 /* Case à cocher « Vérifiés uniquement » : cible aérée et cohérente avec la palette */
 .filter-check { display: flex; align-items: center; gap: var(--space-2); min-height: 44px;
   cursor: pointer; }
-.filter-check input { width: 20px; height: 20px; accent-color: var(--color-orange); }
+.filter-check input { width: 20px; height: 20px; accent-color: var(--accent-text); }
 
 /* Volet repliable des filtres (mobile) */
 .filters-toggle > summary { list-style: none; display: flex; align-items: center;

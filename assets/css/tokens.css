@@ -8,12 +8,71 @@
   --color-gray-bg: #F5F5F5;
   --color-gray-border: #E5E7EB;
   --color-gray-text: #6B7280;
+  /* Primitives reprises des valeurs DEJA livrées dans les feuilles (aucune teinte
+     inventée par le lot B1) : rouges des erreurs/toast et verts/clairs du thème sombre. */
+  --color-red: #DC2626;            /* livres : .field .error, .toast--error */
+  --color-red-dark: #B91C1C;       /* livres : .form-errors, .badge--declined, .danger-zone h2 */
+  --color-red-bright: #F87171;     /* livré : [data-theme=dark] .danger-zone h2 */
+  --color-green-bright: #4ADE80;   /* livré : [data-theme=dark] .badge--verified/--accepted */
   --bg: var(--color-white);
   --bg-alt: var(--color-gray-bg);
   --surface: var(--color-white);
   --text: var(--color-black);
   --text-muted: var(--color-gray-text);
   --border: var(--color-gray-border);
+
+  /* --- Tokens sémantiques ajoutés en T13-B (chiffres mesurés, formule WCAG 2.1,
+         dans les deux thèmes) ------------------------------------------------
+     Besoin 1 : un orange qui reste LISIBLE en icône, bordure d'état, anneau de
+     focus ou grand titre. Mesures : #F97316 = 2,80:1 sur blanc et 2,57:1 sur
+     #F5F5F5 (échec même du seuil 3:1 des éléments non textuels) ; #EA580C =
+     3,56:1 sur blanc et 3,26:1 sur #F5F5F5 (conforme pour texte grand et élément
+     non textuel) ; en thème sombre #F97316 = 5,88:1 sur #1F1F1F et 6,74:1 sur
+     #111111. À NOTER : aucun orange de la palette n'atteint 4,5:1 sur blanc →
+     l'orange ne porte jamais de texte courant, le texte courant reste --text. */
+  --accent-text: var(--color-orange-hover);
+  /* Besoin 2 : anneau de focus visible (WCAG 1.4.11) — jamais supprimé, jamais
+     sous 3:1 sur le fond adjacent : 3,56:1 sur blanc en clair, 5,88:1 sur #1F1F1F
+     en sombre. */
+  --focus-ring: var(--color-orange-hover);
+  --focus-halo: rgba(234, 88, 12, .22);
+  /* Besoin 3 : texte posé sur un remplissage de marque (ruling R19 : contraste >
+     esthétique). Noir #111111 sur #F97316 = 6,74:1 ; sur #EA580C = 5,30:1 ; sur
+     #16A34A = 5,73:1. Le blanc sur #F97316 plafonnait à 2,80:1. */
+  --on-accent: var(--color-black);
+  /* Besoin 4 : libellés d'état rendus (erreur / succès), remplissages et fonds
+     teintés associés (le fond teinté translucide doit rester lisible en sombre). */
+  --danger-text: var(--color-red-dark);      /* 6,47:1 sur blanc, 5,37:1 sur le fond teinté */
+  --danger-fill: var(--color-red);           /* blanc sur #DC2626 = 4,83:1 */
+  --danger-tint: rgba(220, 38, 38, .12);     /* rendu #FBE5E5 sur blanc */
+  --success-text: var(--color-green-dark);   /* 7,13:1 sur blanc, 6,24:1 sur le fond teinté */
+  --success-fill: var(--color-green-dark);   /* blanc sur #166534 = 7,13:1 */
+  --success-tint: rgba(22, 163, 74, .12);    /* rendu #E3F4EB sur blanc */
+  --on-success: var(--color-white);
+  /* Besoin 5 : voile des modales — en thème sombre le fond de page est déjà noir,
+     un voile à 55 % ne sépare plus la modale ; il passe à 78 %. */
+  --overlay: rgba(17, 17, 17, .55);
+  /* Besoin 6 : voile sous les textes posés sur les photos. Les deux littéraux
+     livrés (#111111 à 55 % puis 30 %) sont reconduits tels quels : en dessous,
+     « catégories » et « gratuite » du hero tombaient à 3,00:1 et 2,83:1 à cause
+     du dégradé horizontal qui s'évanouit à droite. Le hero reçoit donc un second
+     voile vertical (var(--scrim) en bas) et le texte des statistiques passe en
+     blanc plein : mesure 9,07:1 sur le pixel rendu le plus clair de la zone.
+     Le voile ne dépend pas du thème — c'est la photo qui porte le texte. */
+  --scrim: rgba(17, 17, 17, .55);
+  --scrim-soft: rgba(17, 17, 17, .3);
+  /* Besoin 7 : fond d'accentuation léger (fil actif, rôle sélectionné, pastille
+     d'icône, encart d'attente) — une seule variable pour ce besoin. Le .1 livré
+     rendu sur #1F1F1F ne faisait que #35271E (1,15:1 avec la surface) et
+     disparaissait en thème sombre ; le palier sombre .16 rend #422C1E. Le fond
+     teinté n'est jamais le seul porteur de l'état : la bordure --accent-text
+     (5,88:1 sur #1F1F1F), le libellé texte et le contrôle natif cochés le portent
+     aussi. Texte sur ce fond : 17,05:1 en clair, 11,96:1 en sombre. */
+  --accent-tint: rgba(249, 115, 22, .1);
+  /* Besoin 8 : squelettes de chargement. */
+  --skeleton: var(--color-gray-border);
+  --skeleton-shine: rgba(255, 255, 255, .75);
+
   --font-title: 'Syne', system-ui, sans-serif;
   --font-body: 'Plus Jakarta Sans', system-ui, sans-serif;
   --radius-sm: 8px; --radius-md: 14px; --radius-lg: 22px;
@@ -34,4 +93,23 @@
   --shadow-sm: 0 1px 2px rgba(0,0,0,.4);
   --shadow-md: 0 8px 24px rgba(0,0,0,.5);
   --shadow-lg: 0 16px 48px rgba(0,0,0,.6);
+  /* Mêmes besoins, valeurs du thème sombre (mesurées) : #F97316 = 5,88:1 sur
+     #1F1F1F et 6,74:1 sur #111111 ; #F87171 = 5,96:1 sur #1F1F1F ; #4ADE80 =
+     9,46:1 sur #1F1F1F. Les fonds teintés montent d'un palier d'alpha pour
+     rester perceptibles sur du noir : #492121 (danger) donne #F87171 à 4,99:1 et
+     #1D3C28 (succès) donne #4ADE80 à 6,97:1. */
+  --accent-text: var(--color-orange);
+  --focus-ring: var(--color-orange);
+  --focus-halo: rgba(249, 115, 22, .35);
+  --accent-tint: rgba(249, 115, 22, .16);
+  --danger-text: var(--color-red-bright);
+  --danger-tint: rgba(220, 38, 38, .22);
+  --success-text: var(--color-green-bright);
+  --success-tint: rgba(22, 163, 74, .22);
+  --overlay: rgba(17, 17, 17, .78);
+  --skeleton: var(--border);
+  --skeleton-shine: rgba(245, 245, 245, .12);
+  /* Volontairement identiques dans les deux thèmes : --on-accent, --danger-fill,
+     --success-fill, --on-success (remplissages de marque constants), et --scrim /
+     --scrim-soft (le voile est calculé sur la photo, qui ne change pas de thème). */
 }

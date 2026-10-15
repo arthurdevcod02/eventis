@@ -3,7 +3,7 @@
 // « Laisser un avis » (étoiles 1–5 + commentaire) ; « Voir les messages » → Tâche 8.
 import { db } from '../core/db.js';
 import { requireAuth } from '../core/guards.js';
-import { esc, icon, formatFCFA, formatDateFR, REQUEST_STATUS, EVENT_TYPES, toast } from '../core/ui.js';
+import { esc, icon, formatFCFA, formatDateFR, REQUEST_STATUS, EVENT_TYPES, toast, scrollIntoViewRespectful, reviewStatusBadgeHTML } from '../core/ui.js';
 import { mountNavbar } from '../components/navbar.js';
 import { mountFooter } from '../components/footer.js';
 
@@ -92,10 +92,10 @@ function noteFor(r) {
     // jamais d'une supposition : pas de succès mensonger.
     return rv?.visible
       ? `<div class="review-ok"><strong>Merci pour votre avis !</strong>
-          <span><span class="badge badge--accepted">Publié</span></span>
+          <span>${reviewStatusBadgeHTML(true)}</span>
           <span class="muted">Votre avis est en ligne sur la fiche du prestataire.</span></div>`
       : `<div class="review-ok"><strong>Merci pour votre avis !</strong>
-          <span><span class="badge badge--progress">En attente de modération</span></span>
+          <span>${reviewStatusBadgeHTML(false)}</span>
           <span class="muted">Il sera publié après validation par l'équipe Eventis.</span></div>`;
   }
   return '';
@@ -135,7 +135,7 @@ function openDetail(id) {
   detail.hidden = false;
   bindDetail(r);
   detail.querySelector('#request-detail-title').focus({ preventScroll: true });
-  detail.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  scrollIntoViewRespectful(detail);
 }
 
 function bindDetail(r) {

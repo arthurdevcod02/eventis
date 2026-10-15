@@ -9,8 +9,10 @@
 .provider-gallery[hidden] { display: none; }
 .provider-hero { position: relative; border-radius: var(--radius-lg); overflow: hidden;
   box-shadow: var(--shadow-md); }
+/* Voile descendant sous la miniature active : mêmes tokens que le hero
+   (--scrim = noir #111111 à 55 %) — le voile dépend de la photo, pas du thème. */
 .provider-hero::after { content: ''; position: absolute; inset: 0;
-  background: linear-gradient(180deg, rgba(17,17,17,0) 55%, rgba(17,17,17,.55)); }
+  background: linear-gradient(180deg, transparent 55%, var(--scrim)); }
 .provider-hero img { width: 100%; aspect-ratio: 16/9; max-height: 440px; object-fit: cover; }
 
 .provider-gallery__thumbs { display: flex; gap: var(--space-2); margin-top: var(--space-3);
@@ -20,9 +22,13 @@
   border-radius: var(--radius-sm); background: var(--surface); overflow: hidden;
   min-height: 44px; transition: border-color .2s; }
 .provider-gallery__thumb img { width: 96px; height: 64px; object-fit: cover; display: block; }
-.provider-gallery__thumb:hover { border-color: var(--color-orange); }
-.provider-gallery__thumb[aria-pressed="true"] { border-color: var(--color-orange);
-  box-shadow: 0 0 0 3px rgba(249,115,22,.18); }
+.provider-gallery__thumb:hover { border-color: var(--accent-text); }
+/* Miniature active : bordure --accent-text (3,56:1 en clair) + anneau
+   --focus-halo, visible dans les deux thèmes (l'ancien rgba(249,115,22,.18)
+   se composait en #462E1D sur fond sombre, quasi invisible). L'état est aussi
+   porté par aria-pressed, jamais par la couleur seule. */
+.provider-gallery__thumb[aria-pressed="true"] { border-color: var(--accent-text);
+  box-shadow: 0 0 0 3px var(--focus-halo); }
 
 /* En-tête de la fiche */
 .provider-head { display: flex; flex-wrap: wrap; align-items: center;
@@ -35,7 +41,9 @@
 .provider-head__contacts a { display: inline-flex; align-items: center; gap: var(--space-2);
   min-height: 44px; padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--radius-sm);
   background: var(--surface); text-decoration: none; font-weight: 600; transition: border-color .2s, color .2s; }
-.provider-head__contacts a:hover { border-color: var(--color-orange); color: var(--color-orange); }
+/* Survol : seule la bordure prend l'accent (repère non textuel, 3,56:1) ; le
+   libellé reste --text car aucun orange n'atteint 4,5:1 en 16 px sur la surface. */
+.provider-head__contacts a:hover { border-color: var(--accent-text); }
 .provider-head__contacts svg { width: 18px; height: 18px; flex: none; }
 
 /* Disposition : colonne principale + colonne formulaire */

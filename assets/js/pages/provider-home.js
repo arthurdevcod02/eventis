@@ -62,7 +62,7 @@ function renderDashboard({ user, provider, requests, clients, unreadById, respon
   const latest = requests.slice(0, 5);
   const listHTML = latest.length
     ? `<div class="request-list">${latest.map(r =>
-        requestCardHTML(r, clients.get(r.clientId) ?? 'Client', unreadById.get(r.id) ?? 0)).join('')}</div>`
+        requestCardHTML(r, clients.get(r.clientId) || 'Client', unreadById.get(r.id) ?? 0)).join('')}</div>`
     : `<div class="empty">${icon('search')}
           <p>Vous n'avez pas encore reçu de demande.</p>
           <p class="muted">Vos demandes de devis reçues apparaîtront ici.</p>

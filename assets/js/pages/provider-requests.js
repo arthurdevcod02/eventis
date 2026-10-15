@@ -5,9 +5,10 @@
 import { auth } from '../core/auth.js';
 import { db } from '../core/db.js';
 import { requireAuth } from '../core/guards.js';
-import { esc, icon, formatFCFA, formatDateFR, timeAgoFR, REQUEST_STATUS, EVENT_TYPES, toast } from '../core/ui.js';
+import { esc, icon, formatFCFA, formatDateFR, timeAgoFR, REQUEST_STATUS, EVENT_TYPES, toast, scrollIntoViewRespectful } from '../core/ui.js';
 import { mountNavbar } from '../components/navbar.js';
 import { mountFooter } from '../components/footer.js';
+import { openModal } from '../components/modal.js';
 
 const user = requireAuth(['prestataire']);
 // user === null → requireAuth a déjà redirigé (location.replace) : on arrête tout ici.
@@ -29,46 +30,6 @@ let requests = [];
 let clients = new Map();
 let unreadById = new Map();
 
-// --- Modale accessible : focus dedans, Échap ferme, retour au déclencheur -----
-function openModal(title, bodyHTML, onOpen) {
-  const trigger = document.activeElement;
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
-  overlay.innerHTML = `
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div class="modal__head">
-        <h2 id="modal-title">${esc(title)}</h2>
-        <button type="button" class="modal__close" data-close aria-label="Fermer la boîte de dialogue">${icon('close')}</button>
-      </div>
-      <div class="modal__body">${bodyHTML}</div>
-    </div>`;
-  document.body.appendChild(overlay);
-
-  const close = () => {
-    overlay.remove();
-    document.removeEventListener('keydown', onKey);
-    trigger?.focus?.({ preventScroll: true });
-  };
-  const onKey = e => {
-    if (e.key === 'Escape') { e.preventDefault(); close(); return; }
-    if (e.key !== 'Tab') return;
-    // Cycle du focus à l'intérieur de la modale
-    const els = [...overlay.querySelectorAll('button, input, select, textarea, [href]')]
-      .filter(el => !el.disabled && el.offsetParent !== null);
-    if (!els.length) return;
-    const first = els[0];
-    const last = els[els.length - 1];
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
-  };
-  document.addEventListener('keydown', onKey);
-  overlay.querySelector('[data-close]').addEventListener('click', close);
-  overlay.querySelector('[data-cancel]')?.addEventListener('click', close);
-  onOpen?.(overlay, close);
-  const initial = overlay.querySelector('textarea, input, select, button:not(.modal__close)') ?? overlay.querySelector('.modal__close');
-  initial?.focus();
-}
-
 // --- Liste ---------------------------------------------------------------------
 function cardHTML(r) {
   const meta = [
@@ -81,7 +42,7 @@ function cardHTML(r) {
   return `
     <button type="button" class="request-card" data-open="${esc(r.id)}">
       <span class="request-card__head">
-        <span class="request-card__title">${esc(clients.get(r.clientId) ?? 'Client')}</span>
+        <span class="request-card__title">${esc(clients.get(r.clientId) || 'Client')}</span>
         ${statusBadge(r)}
       </span>
       <span class="request-card__meta"><span>${meta}</span></span>
@@ -145,7 +106,7 @@ function replyHTML(r) {
 function detailHTML(r) {
   return `
     <div class="request-detail__head">
-      <h2 tabindex="-1" id="request-detail-title">Demande de ${esc(clients.get(r.clientId) ?? 'Client')}</h2>
+      <h2 tabindex="-1" id="request-detail-title">Demande de ${esc(clients.get(r.clientId) || 'Client')}</h2>
       ${statusBadge(r)}
     </div>
     <dl class="request-detail__grid">
@@ -181,7 +142,7 @@ function openDetail(id) {
   if (!r) return;
   renderDetail(r);
   detailEl().querySelector('#request-detail-title').focus({ preventScroll: true });
-  detailEl().scrollIntoView({ behavior: 'smooth', block: 'start' });
+  scrollIntoViewRespectful(detailEl());
 }
 
 const detailEl = () => document.getElementById('request-detail');

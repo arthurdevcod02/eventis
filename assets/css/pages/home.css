@@ -8,22 +8,31 @@
 .section__head h2 { margin-bottom: 0; }
 
 /* Hero ------------------------------------------------------------------ */
+/* Deux voiles superposés sur la photo : horizontal (historique) + vertical
+   descendant vers le bloc de texte. Sans ce second voile, le dégradé horizontal
+   s'évanouissait à droite et les statistiques tombaient sous 3:1 sur les zones
+   claires de la photo. Le voile le plus fort (.55) garantit un plancher sombre
+   sous chaque ligne de texte, quel que soit le tirage de la photo. */
 .hero {
   position: relative;
   min-height: 88vh;
   display: flex;
   align-items: flex-end;
-  color: #fff;
+  color: var(--color-white);
   background:
-    linear-gradient(100deg, rgba(17,17,17,.55) 0%, rgba(17,17,17,.3) 55%, rgba(17,17,17,0) 82%),
+    linear-gradient(180deg, transparent 40%, var(--scrim) 100%),
+    linear-gradient(100deg, var(--scrim) 0%, var(--scrim-soft) 55%, transparent 82%),
     url(/assets/img/hero.jpg) center / cover no-repeat;
 }
 .hero__inner { padding-block: var(--space-8); }
+/* Toutes les copies du hero sont en blanc plein : la mesure au rendu (sonde B1)
+   donne 9,07:1 au pire pixel de la zone texte ; l'ancien blanc à 85-92 % d'alpha
+   composé sur les zones claires de la photo descendait sous 3:1. */
 .hero__eyebrow { font-weight: 600; font-size: .8rem; letter-spacing: .14em;
-  text-transform: uppercase; color: rgba(255,255,255,.9); margin-bottom: var(--space-3); }
+  text-transform: uppercase; color: var(--color-white); margin-bottom: var(--space-3); }
 .hero__title { font-size: clamp(2.4rem, 6vw, 4.25rem); max-width: 16ch; text-wrap: balance; }
 .hero__sub { margin-top: var(--space-4); max-width: 48ch; font-size: 1.1rem;
-  color: rgba(255,255,255,.92); }
+  color: var(--color-white); }
 
 /* Barre de recherche du hero */
 .hero__search { margin-top: var(--space-6); width: min(680px, 100%);
@@ -37,8 +46,8 @@
 .hero__search .btn { flex: none; }
 
 .hero__stats { margin-top: var(--space-6); display: flex; flex-wrap: wrap;
-  gap: var(--space-5); color: rgba(255,255,255,.85); }
-.hero__stats strong { font-family: var(--font-title); font-size: 1.5rem; color: #fff;
+  gap: var(--space-5); color: var(--color-white); }
+.hero__stats strong { font-family: var(--font-title); font-size: 1.5rem; color: var(--color-white);
   margin-right: var(--space-1); }
 
 /* Catégories ------------------------------------------------------------ */
@@ -46,11 +55,16 @@
   gap: var(--space-4); }
 .category-card { display: flex; align-items: center; gap: var(--space-3);
   padding: var(--space-5); text-decoration: none; color: var(--text); font-weight: 600; }
+/* Icône 24 px (non textuel, seuil 3:1) : --accent-text mesure 3,56:1 sur la
+   surface en clair et 5,88:1 en sombre ; #F97316 plafonnait à 2,80:1 en clair.
+   Fond teinté via --accent-tint (visible dans les deux thèmes). */
 .category-card__icon { display: inline-flex; align-items: center; justify-content: center;
   width: 48px; height: 48px; flex: none; border-radius: var(--radius-sm);
-  background: rgba(249,115,22,.12); color: var(--color-orange);
+  background: var(--accent-tint); color: var(--accent-text);
   transition: background .2s, color .2s; }
-.category-card:hover .category-card__icon { background: var(--color-orange); color: #fff; }
+/* Au survol l'icône prend le fond de marque : le glyphe passe en noir #111111
+   (6,74:1 sur #F97316) — l'ancien blanc ne donnait que 2,80:1. */
+.category-card:hover .category-card__icon { background: var(--color-orange); color: var(--on-accent); }
 
 /* Étapes ---------------------------------------------------------------- */
 .steps { list-style: none; margin: 0; padding: 0;
@@ -59,17 +73,13 @@
   border-radius: var(--radius-md); padding: var(--space-5); }
 .steps strong { display: block; font-family: var(--font-title); font-size: 1.3rem;
   margin-bottom: var(--space-2); }
-.steps strong::first-letter { color: var(--color-orange); }
+/* Lettrine des étapes : texte grand (1,3 rem gras → seuil 3:1) — --accent-text
+   (3,56:1 en clair) remplace #F97316 (2,80:1). */
+.steps strong::first-letter { color: var(--accent-text); }
 
-/* Prestataires à la une -------------------------------------------------- */
-.provider-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: var(--space-5); }
-.provider-card { display: grid; grid-template-rows: auto 1fr; text-decoration: none;
-  color: var(--text); }
-.provider-card__media { position: relative; }
-.provider-card__media .badge--verified { position: absolute; top: var(--space-3);
-  left: var(--space-3); box-shadow: var(--shadow-sm); }
-.provider-card__price { font-weight: 700; }
+/* Prestataires à la une --------------------------------------------------
+   Les règles .provider-grid / .provider-card* sont déplacées dans
+   components.css (ruling R29) : la carte est rendue par trois feuilles de page. */
 
 /* Témoignages ------------------------------------------------------------ */
 .testimonial-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -82,8 +92,9 @@
   gap: var(--space-3); flex-wrap: wrap; }
 .demo-note { margin-top: var(--space-4); font-size: .875rem; }
 
-/* Appel à l'action -------------------------------------------------------- */
-.cta { background: var(--color-black); color: #fff; }
+/* Appel à l'action — fond noir littéral dans les deux thèmes : le blanc y mesure
+   17,93:1, aucun ajustement de thème n'est nécessaire. */
+.cta { background: var(--color-black); color: var(--color-white); }
 .cta__inner { display: grid; justify-items: center; text-align: center; gap: var(--space-3); }
 
 /* Responsive -------------------------------------------------------------- */

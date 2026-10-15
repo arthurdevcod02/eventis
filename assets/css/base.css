@@ -12,7 +12,10 @@ h1, h2, h3 { font-family: var(--font-title); line-height: 1.1; font-weight: 700;
 h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
 a { color: inherit; }
 img { max-width: 100%; display: block; }
-:focus-visible { outline: 3px solid var(--color-orange); outline-offset: 2px; }
+/* Anneau de focus global : JAMAIS neutralisé (aucun `outline: none` livré nulle
+   part). --focus-ring = 3,56:1 sur blanc en thème clair et 5,88:1 sur #1F1F1F en
+   thème sombre : au-dessus du seuil 3:1 des éléments non textuels (1.4.11). */
+:focus-visible { outline: 3px solid var(--focus-ring); outline-offset: 2px; }
 button { font: inherit; cursor: pointer; min-height: 44px; }
 
 .container { width: min(1120px, 100% - 2*var(--space-5)); margin-inline: auto; }

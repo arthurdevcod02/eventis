@@ -16,7 +16,7 @@ function statCardHTML(iconName, value, label) {
   return `
     <div class="stat-card">
       <span class="stat-card__icon">${icon(iconName)}</span>
-      <span class="stat-card__value">${value}</span>
+      <span class="stat-card__value">${esc(value)}</span>
       <span class="stat-card__label">${esc(label)}</span>
     </div>`;
 }
