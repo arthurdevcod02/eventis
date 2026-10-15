@@ -71,7 +71,11 @@
 .field { display: grid; gap: 6px; margin-bottom: var(--space-4); }
 .field label { font-weight: 600; font-size: .9rem; }
 .field input, .field select, .field textarea { font: inherit; color: var(--text); background: var(--surface);
-  border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; min-height: 44px; }
+  border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; min-height: 44px;
+  /* Un <select> ne peut pas descendre sous sa largeur min-content (le texte de son
+     option la plus longue) : à 360 px, le formulaire de devis débordait la page de
+     2 px mesurés (scrollWidth 362). min-width:0 l'autorise à se réduire. */
+  min-width: 0; }
 /* Focus : l'anneau n'est JAMAIS supprimé (règle globale du lot) — le `outline: none`
    livré ici neutralisait le :focus-visible global sur tous les champs (sonde : aucun
    anneau mesurable, ratio 0). L'anneau consomme --focus-ring (3,56:1 sur blanc en
