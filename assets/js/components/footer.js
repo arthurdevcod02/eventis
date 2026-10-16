@@ -1,6 +1,7 @@
 // footer.js — pied de page : marque, navigation, contact, rappel mode démo.
 import { isDemoMode } from '../core/config.js';
 import { icon } from '../core/ui.js';
+import { mountInstallPrompt } from './install-prompt.js';
 
 const CONTACT = [
   { iconName: 'mail', label: 'nandjanakpane@gmail.com', href: 'mailto:nandjanakpane@gmail.com' },
@@ -9,8 +10,10 @@ const CONTACT = [
 ];
 
 // Enregistrement du service worker (portée « / », cache statique uniquement).
-// Volontairement sans interface : aucune promesse d'« installation » ni de « hors ligne »
-// n'est affichée à l'utilisateur, seulement un journal de refus pour le débogage.
+// L'enregistrement lui-même reste sans interface : il ne promet rien à l'utilisateur,
+// seulement un journal de refus pour le débogage. Ce qui se voit — l'invitation à
+// installer — est décidé ailleurs, dans install-prompt.js, qui ne s'appuie que sur les
+// événements réels du navigateur et ne promet toujours pas le hors ligne.
 let swRegistrationStarted = false;
 
 function registerServiceWorker() {
@@ -29,6 +32,10 @@ function registerServiceWorker() {
 
 export function mountFooter() {
   registerServiceWorker();
+  // Le service worker est enregistré sur toutes les pages via ce pied de page ;
+  // l'invitation à installer y est branchée au même endroit pour hériter de la
+  // même couverture, sans retoucher les vingt-huit pages HTML.
+  mountInstallPrompt();
   const footer = document.getElementById('site-footer');
   if (!footer) return;
   const demo = isDemoMode();

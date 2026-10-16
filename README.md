@@ -133,7 +133,7 @@ externe · ⛔ hors périmètre de la phase 1.
 | Mode démonstration | ✅ | tout est stocké dans le navigateur (`localStorage`) : aucun serveur, aucune base ; bannière permanente rappelant le caractère fictif des données |
 | Connecteur Supabase | ⚙️ | authentification + PostgreSQL + règles RLS ; **interchangeable avec le mode démo sans toucher au code des pages**, mais jamais exercé contre une instance réelle (voir §8 et §10) |
 | Responsive | ✅ | mobile-first, contrôlé de 360 à 1440 px |
-| PWA | ✅ | manifeste, icônes, service worker hors ligne (réseau d'abord pour les pages, cache d'abord + révalidation pour les ressources) |
+| PWA | ✅ | manifeste (`start_url` et `scope` sur `/`), icônes 192/512, service worker hors ligne (réseau d'abord pour les pages, cache d'abord + révalidation pour les ressources) ; **invitation à installer** en bannière basse, branchée sur les événements réels du navigateur — voir §9 |
 | Mode sombre · animations | ✅ | thème clair/sombre avec contrastes mesurés, animations GSAP neutralisées sous `prefers-reduced-motion` |
 | Accessibilité | ✅ | lien d'évitement, focus toujours visible, navigation clavier, modales `role="dialog"` + Échap, échappement HTML systématique |
 | Paiement, réservation, contrat en ligne | ⛔ | **absent du périmètre** : aucun moyen de paiement n'est intégré ; la mise en relation s'arrête au devis et à la messagerie |
@@ -209,15 +209,18 @@ l'erreur d'authentification — c'est le but : ces mots de passe sont publics da
 node --test "tests/*.test.js"
 ```
 
-89 tests natifs, sur sept fichiers : couche de données (mode démo, contrat `site_settings`),
+97 tests natifs, sur huit fichiers : couche de données (mode démo, contrat `site_settings`),
 authentification démo et contrat OAuth (`signInWithGoogle`, profil en attente, complément
 d'inscription), contrat de garde de session Supabase, helpers de redirection Google, formats
 français (`Intl`, FCFA, dates), verrous du mode maintenance, **verrous des en-têtes livrés**
-(`tests/headers.test.js` : CSP directive par directive, absence de script inline dans les 28 pages)
-et **verrous des fichiers de purge** (`tests/purge.test.js` : ordre imposé par les clés étrangères,
+(`tests/headers.test.js` : CSP directive par directive, absence de script inline dans les 28 pages),
+**verrous des fichiers de purge** (`tests/purge.test.js` : ordre imposé par les clés étrangères,
 garde-fou d'administrateur, fichier d'état des lieux strictement en lecture, liste des comptes lue à
-partir de `seed.sql`). Les sept verrous de purge ont été vérifiés par contrôle négatif : chaque
-invariant cassée une à une fait bien tomber le test correspondant.
+partir de `seed.sql`) et **verrous de l'invitation à installer** (`tests/install-prompt.test.js` :
+copie du brief mot pour mot, absence de fausse confirmation, absence de promesse hors ligne,
+hygiène de stockage, pages exclues, pré-cache du service worker, CSP). Les sept verrous de purge et
+les dix mutations de contrôle de l'invitation ont été vérifiés : chaque invariant cassée une à une
+fait bien tomber le test correspondant, puis le fichier revient à l'octet près.
 
 ## 7. Configuration Supabase (mode réel)
 
@@ -561,6 +564,18 @@ Ce réglage est dans le compte de l'exploitant, et je n'ai ni accès ni jeton ; 
 | Contrôle négatif des sept verrous | sept invariant cassées une à une (ordre inversé, écriture ajoutée au fichier de lecture, fiches détruites dans la variante qui les conserve, chaque garde-fou supprimé, avis laissés rattachés à une demande, uuid hors seed introduit) puis restauration octet pour octet et relecture | **7 / 7 en échec attendu**, suite revenue à 7 vertes après restauration |
 | Exécution réelle des purges | — | **non exécuté** : aucune instance Postgres ici, et je n'écris pas dans ta base. À jouer dans le SQL Editor, `purge-etat-des-lieux.sql` d'abord (§7). |
 
+**Invitation à installer (PWA) — campagne du 16 octobre 2026**
+
+| Campagne | Portée | Résultat |
+|---|---|---|
+| `node --test` (8 fichiers, dont `tests/install-prompt.test.js`) | les quatre textes du brief mot pour mot ; **aucune fausse confirmation** (rien n'est écrit comme « installé » sans l'événement `appinstalled` du navigateur, aucun bouton quand le chemin d'installation est inconnu) ; **aucune promesse hors ligne** dans ce que voit le visiteur, et l'avertissement inverse présent ; quatre clés de stockage connues et **une seule** écriture `localStorage`, un horodatage ; plafond de deux invitations par visite ; `/admin` et `/auth` exclues ; pré-cache du service worker sans page protégée ; aucun gestionnaire inline ; branchement sur le pied de page | **8 / 8** |
+| Contrôle négatif des verrous | dix invariant cassées une à une (chemin inconnu quand même affiché, exclusion supprimée, titre modifié, `onclick` réintroduit, stockage d'autre chose qu'un horodatage, mémoire d'installation détachée de `appinstalled`, page protégée pré-enregistrée, promesse hors ligne réintroduite, garde du compteur supprimée, plafond illimité), puis restauration octet pour octet | **10 / 10 en échec attendu**, suite revenue à 8 vertes après restauration |
+| QA navigateur réelle (`dist/` servi avec les en-têtes `netlify.toml` **rejoués**, Chrome headless) | 28 assertions : invite native capturée puis poussée par le clic, bannière collée en bas, pied de page soulagé de 112 px, copie conforme, deux boutons et pas un de plus, acceptée → bannière retirée **sans** message de succès, `appinstalled` → mémoire + confirmation, refusée → « Plus tard » horodaté et silence pendant trente jours, `display-mode: standalone` → aucune invitation, premier chargement silencieux puis apparition après 15,6 s, `/auth/connexion.html` exclue | **28 / 28**, 0 incident console/CSP |
+| Rendu mesuré | bureau 1280 px et **iPhone 390 × 844** (Safari iOS simulé) : bannière pleine largeur, **0 px de débordement horizontal**, guide en trois étapes déplié (473 px de haut, jamais hors viewport), boutons 135 × 40 et 88 × 40, fermeture 40 × 44 | **OK** |
+| `/admin/` **en vraie session administrateur** (mode démonstration) | aucune invitation alors que le pied de page — le point de branchement — est bien présent : `data-install` absent, `banniere: false` ; contrôle positif sur la page d'accueil du même navigateur, titre lu « Emportez Eventis partout avec vous » | **OK** |
+| Non-régression trouvée **par** la mesure | une fiche introuvable redirigeait vers `/404.html` et consommait l'invitation de la visite : le marqueur était un booléen. Il est devenu un compteur borné à deux pages — re-mesuré : après redirection, bannière présente et compteur à 1 | **OK** |
+| Firefox et iPhone **réels** | — | **non exécuté** : seul Chrome est pilotable ici. Les intitulés du menu Firefox et le panneau de partage Safari sont des formulations génériques, et le verrou l'interdit d'écrire : « l'intitulé exact varie selon la version ». |
+
 **Limites connues, assumées et non masquées**
 
 - **Navigateurs** : seul **Chrome** a été piloté. **Firefox, Safari et Edge ne sont pas testés** —
@@ -571,8 +586,13 @@ Ce réglage est dans le compte de l'exploitant, et je n'ai ni accès ni jeton ; 
 - **Google OAuth** : le départ est mesuré en navigateur jusqu'à l'écran de compte Google ; le
   **retour** (consentement, échange de code, session) n'a **jamais** été parcouru contre le vrai
   fournisseur (voir §7bis).
-- **PWA** : manifeste et service worker validés par mesure interne ; l'invite « Installer
-  l'application » n'est pas observable en headless et reste à confirmer sur mobile en HTTPS.
+- **PWA** : manifeste et service worker validés par mesure interne ; l'invitation à installer et
+  l'événement `beforeinstallprompt` ont été mesurés dans Chrome (y compris un événement **de
+  confiance**, et non une simulation). Ce qui reste **non prouvé** : le panneau d'installation natif
+  Android/Chrome réel — un `prompt()` joué en headless ne reçoit jamais de réponse, donc la bannière
+  reste affichée et rien n'est affirmé —, le panneau de partage Safari sur un vrai iPhone, et les
+  intitulés exacts du menu Firefox. L'installabilité en HTTPS public est à re-mesurer après le
+  déploiement de ce commit.
 - **Photos** : visuels de démonstration générés (≈ 1,9 Mo au total, ré-encodés pour les connexions
   lentes), pas des prestations réelles.
 - **Photos hébergées plus tard dans Supabase Storage** : la CSP fixe `img-src 'self'`, donc une image
@@ -638,7 +658,7 @@ son profil GitHub.
 ```
 assets/css/            tokens de thème (clair/sombre), base, composants, pages
 assets/js/core/        config, db (adaptateur démo / Supabase), auth, ui, guards, seed
-assets/js/components/  navbar, footer, modale, messagerie, actions admin
+assets/js/components/  navbar, footer, modale, messagerie, actions admin, invitation à installer
 assets/js/pages/       un module par page
 assets/vendor/         GSAP, ScrollTrigger, supabase-js — fichiers locaux
 assets/fonts/          Syne et Plus Jakarta Sans, servies en local

@@ -3,6 +3,7 @@
   "short_name": "Eventis",
   "description": "Trouvez et contactez les meilleurs prestataires événementiels du Togo.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#FFFFFF",
   "theme_color": "#F97316",
