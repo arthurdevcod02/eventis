@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { memoryStorage } from './helpers/memory-storage.js';
-import { DemoAdapter } from '../assets/js/core/db.js';
+import { DemoAdapter, getSharedState, saveSharedState } from '../assets/js/core/db.js';
 
 const makeDb = () => new DemoAdapter(memoryStorage());
 
@@ -257,4 +257,46 @@ test('admin: file pending → approbation via setProviderStatus (voie publique)'
   await db.setProviderStatus('p-gourmand', 'approved');
   assert.ok((await db.listProviders()).some(p => p.id === 'p-gourmand'));
   assert.equal((await db.listProvidersAdmin({ status: 'pending' })).length, 0);
+});
+
+// ---------------------------------------------------------------------------
+// Mode maintenance (site_settings). Les DEUX adaptateurs doivent rendre le même
+// contrat : un écran admin de démo qui ment sur ce que fait la production est
+// exactement ce que le brief maître interdit.
+// ---------------------------------------------------------------------------
+test('site settings: défauts, enregistrement, relecture sur un autre adaptateur', async () => {
+  const storage = memoryStorage();
+  const db = new DemoAdapter(storage);
+  const vide = await db.getSiteSettings();
+  assert.equal(vide.maintenanceEnabled, false);
+  assert.equal(vide.maintenanceMessage, '');
+  assert.equal(vide.updatedAt, null, 'rien d\'encore enregistré ne doit annoncer une date');
+
+  const saved = await db.saveSiteSettings({ maintenanceEnabled: true, maintenanceMessage: '  Migration des paiements.  ' });
+  assert.equal(saved.maintenanceEnabled, true);
+  assert.equal(saved.maintenanceMessage, 'Migration des paiements.', 'le message est nettoyé');
+  assert.ok(Number.isFinite(Date.parse(saved.updatedAt)), 'la date d\'enregistrement est relisible');
+
+  // Persistance : une instance neuve sur le même stockage relit le réglage — c'est
+  // ce qui doit répondre « Activé » après un rechargement ou une reconnexion.
+  const relu = await new DemoAdapter(storage).getSiteSettings();
+  assert.equal(relu.maintenanceEnabled, true);
+  assert.equal(relu.maintenanceMessage, 'Migration des paiements.');
+  assert.equal(relu.updatedAt, saved.updatedAt);
+
+  const off = await db.saveSiteSettings({ maintenanceEnabled: false, maintenanceMessage: '' });
+  assert.equal(off.maintenanceEnabled, false);
+  assert.equal(off.maintenanceMessage, '');
+});
+
+// Le state partagé des visiteurs déjà installés a été écrit avant `settings` : sans
+// repli, getSiteSettings() lit un undefined et la page de réglages casse chez eux.
+test('site settings: un stockage démo antérieur à la table rend les défauts', async () => {
+  const storage = memoryStorage();
+  const state = getSharedState(storage);
+  delete state.settings;
+  saveSharedState(storage, state);
+  const relu = await new DemoAdapter(storage).getSiteSettings();
+  assert.equal(relu.maintenanceEnabled, false);
+  assert.equal(relu.maintenanceMessage, '');
 });

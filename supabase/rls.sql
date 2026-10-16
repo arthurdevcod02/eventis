@@ -58,6 +58,7 @@ alter table public.requests enable row level security;
 alter table public.messages enable row level security;
 alter table public.reviews enable row level security;
 alter table public.contact_messages enable row level security;
+alter table public.site_settings enable row level security;
 
 -- Le profil est créé par l'utilisateur lui-même à l'inscription (auth-supabase.js).
 -- Sans cette politique, seule « profiles admin all » autoriserait l'insertion :
@@ -186,3 +187,26 @@ drop trigger if exists profiles_guard_privileges on public.profiles;
 create trigger profiles_guard_privileges
   before insert or update on public.profiles
   for each row execute function public.guard_profile_privileges();
+
+-- Réglages du site (maintenance). La lecture est ouverte : le drapeau s'affiche à
+-- tout visiteur, sur la page de maintenance comme dans la edge function, et la table
+-- ne contient que trois colonnes — un booléen, un message facultatif, une date.
+drop policy if exists "site_settings public read" on public.site_settings;
+create policy "site_settings public read" on public.site_settings for select
+  using (true);
+
+-- Écriture réservée à un administrateur connecté. Sans jeton, `auth.uid()` est nul et
+-- `is_admin()` est faux : un visiteur non connecté ne peut ni activer ni désactiver la
+-- maintenance, et ce que ce verrou tienne ne se déduit pas de la lecture du fichier —
+-- c'est une requête réelle qui le prouve. Le `with check` empêche aussi bien la
+-- modification d'une ligne existante que l'insertion d'une seconde ligne (la clé
+-- `site_settings_single_row` la refuserait de toute façon).
+drop policy if exists "site_settings admin update" on public.site_settings;
+create policy "site_settings admin update" on public.site_settings for update
+  to authenticated using (is_admin()) with check (is_admin());
+drop policy if exists "site_settings admin insert" on public.site_settings;
+create policy "site_settings admin insert" on public.site_settings for insert
+  to authenticated with check (is_admin());
+drop policy if exists "site_settings admin delete" on public.site_settings;
+create policy "site_settings admin delete" on public.site_settings for delete
+  to authenticated using (is_admin());

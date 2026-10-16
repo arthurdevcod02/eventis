@@ -8,6 +8,15 @@
   command = "node tools/build-dist.mjs"
   publish = "dist"
 
+# Le mode maintenance est appliqué par netlify/edge-functions/maintenance.js, dont la
+# route est déclarée dans le fichier lui-même (`export const config`) : c'est le seul
+# endroit du site qui décide de servir une page ou la page de coupure. Son réglage vit
+# dans la table Supabase `site_settings`, pas dans ce fichier.
+# ATTENTION : cette fonction lit SUPABASE_URL et SUPABASE_ANON_KEY au moment de l'exécution.
+# Ces variables doivent donc porter la portée « Functions » dans l'interface Netlify — les
+# variables déclarées ci-dessous ne sont jamais visibles d'une fonction, et une valeur
+# changée dans l'interface exige un nouveau déploiement pour être reprise.
+
 [build.environment]
   # L'outil de build est un module ES avec `await` au premier niveau : Node ≥ 20.
   NODE_VERSION = "22"

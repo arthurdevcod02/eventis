@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Eventis en maintenance</title>
+  <meta name="description" content="Eventis est temporairement en maintenance. La plateforme améliore ses services et sera de retour très bientôt.">
+  <meta name="robots" content="noindex">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('eventis_theme')||''}catch(e){}</script>
+  <link rel="icon" type="image/svg+xml" href="/assets/icons/icon.svg">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#F97316">
+  <link rel="stylesheet" href="/assets/css/fonts.css">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/components.css">
+  <link rel="stylesheet" href="/assets/css/pages/maintenance.css">
+  <script src="/assets/vendor/supabase-js.min.js" defer></script>
+</head>
+<body class="maint">
+  <main id="main" class="maint__main">
+    <div class="maint__card">
+      <!-- Marque sans barre de navigation : la navigation mènerait à des pages que la
+           maintenance ferme justement. Le logo reste le seul retour vers l'accueil. -->
+      <a class="maint__brand" href="/">
+        <img src="/assets/icons/icon.svg" alt="" width="40" height="40">
+        <span>Eventis</span>
+      </a>
+
+      <div class="maint__art" aria-hidden="true">
+        <span class="maint__ring"></span>
+        <span class="maint__ring maint__ring--sweep"></span>
+        <span class="maint__gear"></span>
+      </div>
+
+      <h1>Eventis est temporairement en maintenance</h1>
+      <p id="maint-message">Nous améliorons actuellement la plateforme afin de vous offrir une meilleure expérience. Nous serons de retour très bientôt. Merci pour votre patience !</p>
+
+      <div class="maint__actions">
+        <button type="button" class="btn btn--primary" id="maint-retry">Réessayer</button>
+        <a class="btn btn--outline" href="/contact.html">Nous écrire</a>
+      </div>
+      <p class="maint__status" id="maint-status" role="status" aria-live="polite"></p>
+      <p class="maint__note" id="maint-demo-note" hidden>Page vue en <strong>mode démonstration</strong> : le blocage réel des autres pages est appliqué par l’hébergeur, il n’est pas simulé ici.</p>
+    </div>
+  </main>
+  <script type="module" src="/assets/js/pages/maintenance.js"></script>
+</body>
+</html>

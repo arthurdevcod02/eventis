@@ -86,6 +86,25 @@ create table public.contact_messages (
   created_at timestamptz not null default now()
 );
 
+-- Réglages du site — une seule ligne, id = 1. Le drapeau de maintenance est lu à
+-- chaque demande de page par la edge function Netlify ; le message, lui, est optionnel
+-- (la page affiche son propre texte par défaut). Ce n'est pas une table secrète : le
+-- drapeau s'affiche publiquement. C'est l'ÉCRITURE qui est réservée à un admin (rls.sql),
+-- donc la ligne se lit avec la seule clé `anon`, sans contourner quoi que ce soit.
+create table public.site_settings (
+  id smallint primary key default 1 constraint site_settings_single_row check (id = 1),
+  maintenance_enabled boolean not null default false,
+  maintenance_message text constraint site_settings_message_length
+    check (maintenance_message is null or length(maintenance_message) <= 500),
+  updated_at timestamptz not null default now()
+);
+
+-- La edge function doit trouver une réponse même avant toute intervention : sans cette
+-- ligne, une base neuve renverrait 0 ligne et le filtre ne pourrait jamais s'appuyer
+-- dessus. `do nothing` : relancer le fichier ne remet jamais le site en service en
+-- cachette si la maintenance est activée.
+insert into public.site_settings (id) values (1) on conflict (id) do nothing;
+
 create index on public.providers(category_id);
 create index on public.providers(status);
 create index on public.services(provider_id);

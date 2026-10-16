@@ -445,6 +445,29 @@ export class DemoAdapter {
     return state.providers.find(p => p.ownerId === userId)?.id ?? null;
   }
 
+  // Réglages du site (mode maintenance). La clé `settings` peut manquer dans un état
+  // écrit avant cette fonction : un visiteur déjà installé porte un localStorage qui ne
+  // la connaît pas, et son écran de réglages ne doit pas casser pour autant.
+  async getSiteSettings() {
+    const s = this._load().settings;
+    return {
+      maintenanceEnabled: !!s?.maintenanceEnabled,
+      maintenanceMessage: s?.maintenanceMessage ?? '',
+      updatedAt: s?.updatedAt ?? null,
+    };
+  }
+
+  async saveSiteSettings({ maintenanceEnabled, maintenanceMessage }) {
+    const state = this._load();
+    state.settings = {
+      maintenanceEnabled: !!maintenanceEnabled,
+      maintenanceMessage: (maintenanceMessage ?? '').trim(),
+      updatedAt: now(),
+    };
+    this._save(state);
+    return { ...state.settings };
+  }
+
   async resetDemo() {
     this.storage.removeItem(STATE_KEY); // re-seed paresseux au prochain accès
   }
@@ -852,6 +875,34 @@ export class SupabaseAdapter {
   async getProviderIdFor(userId) {
     const { data } = await this.client.from('providers').select('id').eq('profile_id', userId).maybeSingle();
     return data?.id ?? null;
+  }
+
+  // Réglages du site. Lecture ouverte à tous (rls.sql) : la page de maintenance et la
+  // edge function n'ont pas de session. Écriture réservée à un admin par la base, pas
+  // par ce fichier — `.single()` sur une écriture refusée remonte l'erreur de Postgres.
+  async getSiteSettings() {
+    const { data, error } = await this.client.from('site_settings')
+      .select('maintenance_enabled, maintenance_message, updated_at').eq('id', 1).maybeSingle();
+    if (error) throw new Error(error.message);
+    return {
+      maintenanceEnabled: !!data?.maintenance_enabled,
+      maintenanceMessage: data?.maintenance_message ?? '',
+      updatedAt: data?.updated_at ?? null,
+    };
+  }
+
+  async saveSiteSettings({ maintenanceEnabled, maintenanceMessage }) {
+    const { data, error } = await this.client.from('site_settings').update({
+      maintenance_enabled: !!maintenanceEnabled,
+      maintenance_message: (maintenanceMessage ?? '').trim() || null,
+      updated_at: new Date().toISOString(),
+    }).eq('id', 1).select('maintenance_enabled, maintenance_message, updated_at').single();
+    if (error) throw new Error(error.message);
+    return {
+      maintenanceEnabled: !!data.maintenance_enabled,
+      maintenanceMessage: data.maintenance_message ?? '',
+      updatedAt: data.updated_at,
+    };
   }
 
   async resetDemo() {

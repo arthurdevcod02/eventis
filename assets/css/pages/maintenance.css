@@ -1,0 +1,120 @@
+/* maintenance.css — la page de coupure. Elle se suffit à elle-même : aucune barre de
+   navigation (elle mènerait à des pages que la maintenance ferme), aucun composant de
+   données (la plateforme peut ne pas répondre pendant que cette page s'affiche).
+   Tout vient des tokens : les deux thèmes et les contrastes mesurés suivent donc le
+   reste du site sans nouvelle teinte — l'anneau utilise --accent-text (3,56:1 sur blanc,
+   seuil des éléments non textuels), l'illustration reste décorative (aria-hidden). */
+
+.maint {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6) var(--space-4);
+  background: var(--bg-alt);
+}
+
+.maint__main { width: 100%; }
+
+.maint__card {
+  max-width: 620px;
+  margin: 0 auto;
+  padding: var(--space-7) var(--space-6);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.maint__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-title);
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: -.01em;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.maint__brand:hover { color: var(--accent-text); }
+
+.maint__art {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin: var(--space-6) auto var(--space-5);
+}
+
+.maint__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+}
+
+.maint__ring--sweep {
+  border-color: transparent;
+  border-top-color: var(--accent-text);
+  animation: maint-turn 2.6s linear infinite;
+}
+
+.maint__gear {
+  position: absolute;
+  inset: 26px;
+  border-radius: 50%;
+  border: 2px dashed var(--accent-text);
+  opacity: .55;
+  animation: maint-turn 9s linear infinite reverse;
+}
+
+@keyframes maint-turn { to { transform: rotate(360deg); } }
+
+.maint h1 {
+  margin: 0 0 var(--space-4);
+  font-size: clamp(1.5rem, 1.1rem + 1.9vw, 2rem);
+}
+
+.maint__card > p {
+  margin: 0 auto;
+  max-width: 46ch;
+  color: var(--text);
+  line-height: 1.65;
+}
+
+.maint__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+}
+
+.maint__status {
+  min-height: 1.5em;
+  margin-top: var(--space-4) !important;
+  color: var(--text-muted) !important;
+  font-size: .95rem;
+}
+
+.maint__note {
+  margin-top: var(--space-4) !important;
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--border);
+  color: var(--text-muted) !important;
+  font-size: .9rem;
+}
+
+@media (max-width: 480px) {
+  .maint { padding: var(--space-4) var(--space-3); }
+  .maint__card { padding: var(--space-6) var(--space-4); }
+  .maint__art { width: 96px; height: 96px; margin-top: var(--space-5); }
+  .maint__actions { flex-direction: column; }
+  .maint__actions .btn { width: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .maint__ring--sweep, .maint__gear { animation: none; }
+}

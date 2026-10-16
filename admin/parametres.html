@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Paramètres du site — Administration Eventis</title>
+  <meta name="description" content="Administration Eventis : mode maintenance de la plateforme et message affiché sur la page de maintenance.">
+  <meta name="robots" content="noindex">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('eventis_theme')||''}catch(e){}</script>
+  <link rel="icon" type="image/svg+xml" href="/assets/icons/icon.svg">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#F97316">
+  <link rel="stylesheet" href="/assets/css/fonts.css">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/components.css">
+  <link rel="stylesheet" href="/assets/css/pages/account.css">
+  <link rel="stylesheet" href="/assets/css/pages/admin.css">
+  <script src="/assets/vendor/gsap.min.js" defer></script>
+  <script src="/assets/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="/assets/vendor/supabase-js.min.js" defer></script>
+  <script src="/assets/js/core/auth-supabase.js" defer></script>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main id="main">
+    <section class="section">
+      <div class="container">
+        <nav class="tabs" aria-label="Administration">
+          <a href="/admin/">Tableau de bord</a>
+          <a href="/admin/prestataires.html">Prestataires</a>
+          <a href="/admin/utilisateurs.html">Utilisateurs</a>
+          <a href="/admin/avis.html">Avis</a>
+          <a href="/admin/categories.html">Catégories</a>
+          <a href="/admin/parametres.html" aria-current="page">Paramètres du site</a>
+        </nav>
+        <div class="account-head">
+          <h1>Paramètres du site</h1>
+          <p class="muted">Ferme temporairement l’accès public de la plateforme, sans jamais enfermer l’administration.</p>
+        </div>
+
+        <div class="admin-section">
+          <div id="settings-skeleton">
+            <p class="skeleton skeleton--hero" aria-hidden="true"></p>
+            <p class="skeleton skeleton--hero" aria-hidden="true"></p>
+          </div>
+
+          <form id="settings-form" class="settings-panel" hidden>
+            <h2>Mode maintenance</h2>
+
+            <p class="settings-warning" id="settings-demo" hidden>
+              <strong>Mode démonstration :</strong> cet enregistrement reste sur cet appareil et ne ferme
+              aucune page. Le blocage public est appliqué par l’hébergeur (Netlify) une fois le site déployé
+              avec ses variables d’environnement Supabase ; il ne peut pas être simulé en local.
+            </p>
+
+            <div class="settings-switch">
+              <input type="checkbox" id="s-maintenance" aria-describedby="s-help s-state">
+              <label for="s-maintenance">Mode maintenance</label>
+              <span class="badge badge--closed" id="s-state" role="status" aria-live="polite">Désactivé</span>
+              <p class="settings-hint" id="s-help">
+                Activé, les visiteurs ne voient plus les pages publiques : ils reçoivent la page de maintenance.
+                Le panneau d’administration (<code>/admin/</code>), les pages de connexion (<code>/auth/</code>),
+                la page de maintenance et la page de contact restent accessibles — un administrateur peut donc
+                toujours revenir ici pour rouvrir le site. Le réglage est relu par l’hébergeur au plus toutes les
+                10 secondes : il devient effectif en quelques secondes, et il survit à la déconnexion comme aux
+                redéploiements.
+              </p>
+            </div>
+
+            <div class="field">
+              <label for="s-message">Message affiché sur la page de maintenance (facultatif)</label>
+              <textarea id="s-message" rows="4" maxlength="500"
+                placeholder="Laissez vide : la page affichera son message par défaut."
+                aria-describedby="s-message-help"></textarea>
+              <p class="admin-note" id="s-message-help">
+                500 caractères maximum. Vide = le message par défaut de la page de maintenance.
+              </p>
+            </div>
+
+            <div class="settings-foot">
+              <button type="submit" class="btn btn--primary" id="s-save">Enregistrer les modifications</button>
+              <span class="badge badge--progress" id="s-dirty" hidden>Modification non enregistrée</span>
+              <p class="settings-updated" id="s-updated"></p>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer id="site-footer"></footer>
+  <script type="module" src="/assets/js/pages/admin-settings.js"></script>
+</body>
+</html>

@@ -123,6 +123,7 @@ externe · ⛔ hors périmètre de la phase 1.
 | Comptes utilisateurs | ✅ | consultation, suspension et réactivation ; un compte suspendu ne peut plus se connecter |
 | Modération des avis | ✅ | file d'attente, publication, masquage ; l'avis publié apparaît sur la fiche publique |
 | Catégories | ✅ | création (slug automatique), renommage, activation / désactivation ; repercute sur les filtres du catalogue |
+| Mode maintenance | ⚙️ | interrupteur « Activé / Désactivé » + message facultatif, enregistrés dans Supabase (`site_settings`) ; la page [`maintenance.html`](maintenance.html) et la edge function [`netlify/edge-functions/maintenance.js`](netlify/edge-functions/maintenance.js) sont écrites et éprouvées en local, **le blocage réel des pages publiques n'est mesurable qu'après déploiement** (§9) |
 | Messages du formulaire de contact | ⚙️ | enregistrés (`contact_messages` en mode réel) mais **aucun écran d'administration ne les consulte encore** : en mode réel, la lecture se fait depuis la console Supabase |
 
 ### Transverse
@@ -141,11 +142,11 @@ externe · ⛔ hors périmètre de la phase 1.
 
 Ce qui est réellement dans le dépôt — pas de liste théorique :
 
-- **HTML5** — 23 pages, multi-pages réel (pas de routeur, pas de SPA).
-- **CSS3** natif — 12 feuilles : tokens de thème (`--accent`, `--surface`, thème sombre par
+- **HTML5** — 28 pages, multi-pages réel (pas de routeur, pas de SPA).
+- **CSS3** natif — 13 feuilles : tokens de thème (`--accent`, `--surface`, thème sombre par
   `data-theme`), `grid`, `clamp()`, requêtes de médias. **Aucun framework CSS, aucune classe
   utilitaire générée** (vérifié : zéro occurrence de Bootstrap dans le dépôt).
-- **JavaScript ES modules natif** — 35 modules, `import`/`export`, top-level `await`. Aucun
+- **JavaScript ES modules natif** — 42 modules, `import`/`export`, top-level `await`. Aucun
   bundler, aucune étape de compilation, `package.json` ne déclare aucune dépendance.
 - **Supabase** — client `supabase-js` servi en local (`assets/vendor/`), adaptateur de données
   et authentification dans [assets/js/core/](assets/js/core/).
@@ -158,10 +159,10 @@ Ce qui est réellement dans le dépôt — pas de liste théorique :
 - **Node.js (outillage)** — serveur de développement sans dépendance
   ([tools/serve.js](tools/serve.js)), générateur de seed ([tools/export-seed.mjs](tools/export-seed.mjs)),
   exécution des tests avec le `node:test` natif.
-- **Git / GitHub** — historique de 29 commits sur la branche `main`.
+- **Git / GitHub** — historique de 43 commits sur la branche `main`.
 
-**En chiffres :** ~7 400 lignes de HTML/CSS/JS écrits à la main (hors bibliothèques
-`assets/vendor/`), 23 pages, 3 rôles, 3 fichiers SQL.
+**En chiffres :** ~8 600 lignes de HTML/CSS/JS écrits à la main (hors bibliothèques
+`assets/vendor/`, hors tests et outillage), 28 pages, 3 rôles, 4 fichiers SQL.
 
 ## 6. Installation locale
 
@@ -222,6 +223,11 @@ non validé** tant que la procédure ci-dessous n'a pas été jouée une fois su
    - [`supabase/rls.sql`](supabase/rls.sql) — règles de sécurité au niveau ligne + déclencheurs
      de modération,
    - [`supabase/seed.sql`](supabase/seed.sql) — jeu de démonstration (facultatif).
+   - **Sur un projet déjà provisionné**, coller plutôt
+     [`supabase/maintenance.sql`](supabase/maintenance.sql) : il crée la table `site_settings`,
+     ses politiques RLS et la ligne unique, sans retoucher les objets existants (relancer
+     `schema.sql` en entier échoue dès la première table déjà créée). Le fichier est idempotent et
+     son `insert … on conflict do nothing` ne remet **jamais** le site en service en cachette.
 3. Renseigner dans [`assets/js/core/config.js`](assets/js/core/config.js) :
    `SUPABASE_URL` (URL du projet) et `SUPABASE_ANON_KEY` (**clé anonyme**, jamais la clé `service_role`).
 4. Dans **Authentication → Sign In / Providers → Email**, « Confirm email » peut être **activé ou
@@ -251,7 +257,9 @@ non validé** tant que la procédure ci-dessous n'a pas été jouée une fois su
 
 **Ce qui reste indisponible tant que cette configuration n'est pas faite :** persistance partagée
 entre navigateurs, e-mail de réinitialisation de mot de passe, consultation des messages de
-contact ailleurs que dans le navigateur qui les a saisis. Tout le reste fonctionne en démo.
+contact ailleurs que dans le navigateur qui les a saisis. Pour le mode maintenance, il manque de
+plus les deux variables Netlify de l'annexe « mettre en ligne » : sans elles, l'interrupteur enregistre bien le drapeau
+mais **aucune page ne se ferme**. Tout le reste fonctionne en démo.
 
 ## 7bis. Connexion Google (OAuth) — ce qui est fait, ce qui reste à configurer
 
@@ -331,6 +339,18 @@ Aucune donnée de session Google n'a été fabriquée pour faire croire au contr
   requête n'est pas administrateur. Un prestataire ne peut donc pas approuver sa propre fiche ni
   se décerner le badge « Vérifié » ; un compte ne peut pas se promouvoir admin ni lever sa propre
   suspension.
+- **Le drapeau de maintenance se lit publiquement et ne s'écrit que par un admin.** La table
+  `site_settings` a une politique de lecture `using (true)` — la edge function l'appelle avec la
+  seule clé `anon`, sans jamais demander la clé `service_role` — et trois politiques d'écriture
+  `to authenticated using/with check (is_admin())`. Sans session, `auth.uid()` est nul : un
+  visiteur non connecté ne peut ni activer ni désactiver la maintenance, même en fabriquant la
+  requête à la main.
+- **Ce que le filtre de maintenance ne peut pas savoir.** La session d'Eventis vit dans le
+  `localStorage` du navigateur, jamais dans un cookie : Netlify ne reçoit donc aucun identifiant
+  avec la demande et ne peut pas distinguer un administrateur d'un visiteur. Choix assumé :
+  `/admin/` et `/auth/` ne sont pas filtrés, pour qu'un administrateur puisse toujours revenir
+  couper la maintenance — même déconnecté. Les données derrière ces pages restent verrouillées
+  par le RLS ; seule la coquille HTML se charge.
 - **Identité d'expéditeur contrôlée** : un message ne peut être inséré qu'avec
   `sender_id = auth.uid()`, donc pas d'usurpation dans le fil d'un autre participant.
 - **Échappement HTML systématique** (`esc()` dans `ui.js`) : une charge utile
@@ -392,6 +412,22 @@ Trois défauts trouvés pendant cette phase de publication et corrigés depuis (
 connectée, un menu du compte qui restait affiché en permanence (`display: grid` neutralisait
 l'attribut `hidden`), et l'impossibilité de le refermer au clavier. Les trois campagnes ont été
 rejouées après correction.
+
+**Mode maintenance — campagne du 16 octobre 2026**
+
+| Campagne | Portée | Résultat |
+|---|---|---|
+| `node --test` (5 fichiers) | contrat `getSiteSettings` / `saveSiteSettings` sur l'adaptateur démo : défauts, élagage du message, relecture par un second adaptateur, stockage antérieur à la table | **76 / 76** |
+| Verrous statiques (`tests/maintenance.test.js`) | les trois écritures de `site_settings` bornées `to authenticated` + `is_admin()` dans `rls.sql` **et** `maintenance.sql`, lecture publique conservée, drapeau booléen + ligne unique + plafond de 500, `excludedPath` de la edge function, texte du brief sur la page et absence de date de retour inventée | **5 / 5** |
+| QA écran headless | onglet « Paramètres du site » : 6 onglets, état écrit Activé/Désactivé synchronisé sur l'interrupteur, badge « non enregistré », modale de confirmation à l'activation, toast, horodatage, persistance après rechargement ; page de maintenance : message personnalisé repris de l'enregistrement, note de mode démonstration, bouton Réessayer, 1280 et 390 px, thèmes clair et sombre, débordement horizontal | **25 / 25**, 0 erreur console |
+
+**Ce que cette campagne ne prouve pas** : le blocage lui-même. La edge function s'exécute sur
+Netlify, avec les variables d'environnement du site ; `tools/serve.js` ne la joue pas et le mode
+démonstration n'écrit que dans le navigateur. Les scénarios « un visiteur non connecté reçoit la
+page de maintenance » et « une requête directe non autorisée ne peut pas changer le drapeau » sont
+à mesurer en ligne, après le `git push` et l'application de `supabase/maintenance.sql` (§7 et annexe
+Netlify). Tant que cette mesure n'a pas eu lieu, le mode maintenance est **écrit, pas encore vérifié
+en production**.
 
 **Limites connues, assumées et non masquées**
 
@@ -468,8 +504,9 @@ assets/js/pages/       un module par page
 assets/vendor/         GSAP, ScrollTrigger, supabase-js — fichiers locaux
 assets/fonts/          Syne et Plus Jakarta Sans, servies en local
 assets/screenshots/    captures du README
-supabase/              schema.sql, rls.sql, seed.sql
-tools/                 serve.js (serveur de développement), export-seed.mjs
+supabase/              schema.sql, rls.sql, seed.sql, maintenance.sql
+netlify/edge-functions/ maintenance.js — le filtre qui ferme le site (déployé, jamais publié dans dist/)
+tools/                 serve.js (serveur de développement), export-seed.mjs, build-dist.mjs
 tests/                 tests Node natifs (node:test)
 docs/superpowers/      spec de design et plan d'implémentation de la phase 1
 ```
@@ -478,7 +515,7 @@ docs/superpowers/      spec de design et plan d'implémentation de la phase 1
 
 Le site est statique, mais **le dépôt ne se publie pas tel quel** : il contient `node_modules`
 (32 Mo), les scripts SQL, les tests et la documentation d'agent. `tools/build-dist.mjs` assemble
-dans `dist/` les 23 pages et les ressources du site uniquement (2,62 MiB), et refuse d'écrire le
+dans `dist/` les 28 pages et les ressources du site uniquement (2,69 MiB), et refuse d'écrire le
 résultat si une cible HTML manque ou si un fichier interdit s'y glisse.
 
 ```bash
@@ -492,8 +529,13 @@ Déploiement :
 2. Netlify lit [`netlify.toml`](netlify.toml) à la racine : commande de build
    `node tools/build-dist.mjs`, dossier public `dist`, Node 22, « pretty URLs » désactivées
    (les URLs gardent leur `.html`, ce qui doit correspondre exactement au retour OAuth déclaré).
-3. Laisser les champs d'environnement vides : la configuration est dans
-   `assets/js/core/config.js`, pas dans l'hébergeur. **Ne pas y mettre de clé `service_role`.**
+3. Deux variables d'environnement, et elles seulement : `SUPABASE_URL` et `SUPABASE_ANON_KEY`,
+   cases **Functions** cochées (les variables de `netlify.toml` ne parviennent pas aux fonctions).
+   Sans la portée Functions, la edge function de maintenance lit des valeurs vides, avertit dans
+   ses journaux et **ne filtre rien**. Ce sont les deux mêmes valeurs que
+   [`assets/js/core/config.js`](assets/js/core/config.js) — la clé `anon` est publique par
+   conception. **Ne jamais y mettre la clé `service_role`.** Une valeur modifiée n'est relue qu'au
+   déploiement suivant.
 4. Après le premier déploiement, Netlify attribue `https://<nom-du-site>.netlify.app`. Noter cette
    URL : c'est la valeur `<domaine>` des §7 et §7bis (Site URL, Redirect URLs, origines Google).
 5. Domaines : ajouter un domaine dans les paramètres Netlify si besoin ; HTTPS est fourni
@@ -512,6 +554,25 @@ d'en-têtes de `netlify.toml` sont appliquées, la page 404 personnalisée répo
 connexion de démonstration mène bien à `/compte/` avec le nom du compte et survit à un rechargement,
 le service worker est enregistré et activé, le manifeste est servi en `application/manifest+json`,
 aucune erreur console sur `/compte/`, `/compte/messages.html` et `/catalogue.html`.
+
+**Le mode maintenance, une fois en ligne.** [`netlify/edge-functions/maintenance.js`](netlify/edge-functions/maintenance.js)
+est la seule pièce d'Eventis qui décide si une page est servie : elle lit `site_settings` avec la
+clé `anon` (drapeau gardé 10 secondes en mémoire, appel plafonné à 800 ms), et quand le drapeau est
+à `true` elle renvoie le contenu de `maintenance.html` avec le statut **503** et `cache-control:
+no-store`. `onError: 'bypass'` : une exception dans ce fichier continue la chaîne, elle ne ferme
+jamais le site. Trois mesures à faire **en ligne**, elles ne peuvent pas être faites ici :
+
+```bash
+curl -sI https://eventis-app.netlify.app/catalogue.html | head -3   # drapeau à true → 503 + x-eventis-maintenance: active
+curl -sI https://eventis-app.netlify.app/admin/         | head -3   # → 200, l'admin reste atteignable
+# drapeau à true, SANS session : la demande n'a aucun droit d'écrire
+curl -s -X PATCH 'https://<projet>.supabase.co/rest/v1/site_settings?id=eq.1' \
+  -H "apikey: <clé anon>" -H "Authorization: Bearer <clé anon>" \
+  -H 'Content-Type: application/json' -H 'Prefer: return=representation' \
+  -d '{"maintenance_enabled":false}'
+# → aucune ligne rendue (le RLS n'applique aucune politique d'écriture au rôle `anon`) ;
+# le contrôle qui compte est la relecture : le drapeau doit être resté à true.
+```
 
 **Ce qui n'est pas encore vérifié** : le parcours connecté prestataire et administrateur en ligne,
 l'invite d'installation PWA, et surtout **tout ce qui dépend de Supabase en réel** — les scripts

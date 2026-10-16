@@ -81,6 +81,36 @@
 .admin-toolbar .field { margin-bottom: 0; min-width: 220px; }
 .admin-results { color: var(--text-muted); font-size: .9rem; }
 
+/* --- Réglages du site (mode maintenance) ------------------------------------ */
+/* Panneau repris de la carte admin (surface + bordure + rayon), SANS l'effet de
+   survol des cartes de catalogue : ce panneau ne se clique pas. L'interrupteur
+   est la checkbox native des cases de consentement (accent-color = --accent-text,
+   3,56:1 en clair / 5,88:1 en sombre : un élément non textuel, seuil 3:1). */
+.settings-panel { background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-md); padding: var(--space-5); display: grid; gap: var(--space-4); }
+.settings-switch { display: grid; grid-template-columns: auto 1fr auto;
+  align-items: center; gap: var(--space-2) var(--space-3); }
+.settings-switch input { width: 20px; height: 20px; justify-self: start;
+  accent-color: var(--accent-text); }
+.settings-switch label { font-weight: 600; cursor: pointer; }
+/* Le texte d'aide occupe sa propre ligne de la grille : dans une rangée flex, sa
+   base de 100 % ne forçait pas le retour à la ligne et il se retrouvait collé à
+   droite de l'interrupteur (mesuré sur la capture 1280). */
+.settings-hint { grid-column: 1 / -1; color: var(--text-muted); font-size: .9rem; max-width: 72ch; }
+.settings-hint code { overflow-wrap: anywhere; }
+/* Avertissement de mode démonstration : même famille visuelle que le panneau
+   d'identifiants démo de la page de connexion (bordure pointillée, aucun rouge —
+   ce n'est pas une erreur). */
+.settings-warning { border: 1px dashed var(--border); border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4); font-size: .9rem; max-width: 72ch; }
+.settings-foot { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3) var(--space-4); }
+.settings-updated { color: var(--text-muted); font-size: .875rem; }
+/* Les deux règles ci-dessous existent parce qu'un display author-level (grid,
+   inline-flex) neutralise le [hidden] du navigateur : sans elles, le panneau
+   chargé et le badge « non enregistré » resteraient visibles. */
+.settings-panel[hidden] { display: none; }
+.settings-foot .badge[hidden] { display: none; }
+
 /* --- File de modération des avis -------------------------------------------- */
 .review-queue { display: grid; gap: var(--space-3); }
 .review-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
