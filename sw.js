@@ -47,6 +47,13 @@ self.addEventListener('activate', (event) => {
   })());
 });
 
+// config.js est le seul fichier dont une version périmée change le comportement du
+// site : c'est lui qui porte l'URL et la clé du projet Supabase, donc le mode démo ou
+// réel. En cache-d'abord, un visiteur connu resterait une visite entière sur l'ancienne
+// configuration après un changement de projet. Réseau d'abord : le repli cache ne joue
+// que si le réseau est réellement absent.
+const NETWORK_FIRST = ['/assets/js/core/config.js'];
+
 function isCacheable(request, url) {
   if (request.method !== 'GET') return false;            // jamais de cache hors GET
   if (url.origin !== self.location.origin) return false; // jamais Supabase ni CDN
@@ -103,6 +110,10 @@ self.addEventListener('fetch', (event) => {
   }
   if (!isCacheable(request, url)) return;
   if (request.mode === 'navigate' || request.destination === 'document') {
+    event.respondWith(fromNetworkFirst(request, url));
+    return;
+  }
+  if (NETWORK_FIRST.includes(url.pathname)) {
     event.respondWith(fromNetworkFirst(request, url));
     return;
   }

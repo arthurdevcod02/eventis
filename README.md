@@ -338,6 +338,13 @@ Aucune donnée de session Google n'a été fabriquée pour faire croire au contr
   (contrôlé côté inscription, profil et tableau admin).
 - **Service worker strict** : uniquement les `GET` de la même origine, aucune mise en cache des
   URLs paramétrées, `sw.js` jamais caché, et les appels vers `*.supabase.co` explicitement exclus.
+- **`config.js` n'attend pas la prochaine visite.** Le cache-d'abord est juste pour les ressources
+  inoffensives ; `config.js` porte l'URL et la clé du projet Supabase, donc décide du mode démo ou
+  réel. Une version périmée y ferait rester un visiteur connu toute une visite de trop. Le fichier
+  est passé en réseau d'abord (`NETWORK_FIRST` dans `sw.js`), avec repli sur le cache quand le
+  réseau est réellement absent. Mesuré dans un navigateur : après deux changements côté serveur,
+  `config.js` renvoie à chaque fois la valeur neuve (`B`, puis `C`) alors que `tokens.css`, témoin
+  cache-d'abord, renvoie toujours l'ancienne ; serveur éteint, `config.js` répond encore depuis le cache.
 - **La déconnexion vide l'écran.** `signOut()` seul ne quittait pas la page : `requireAuth` ne joue
   qu'au chargement, donc les demandes, messages et fiches de l'espace quitté restaient affichés
   après la déconnexion. Le bouton « Déconnexion » mène maintenant à l'accueil (`signOutTarget()`
