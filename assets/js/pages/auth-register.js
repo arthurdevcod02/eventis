@@ -3,6 +3,7 @@
 import { auth } from '../core/auth.js';
 import { CGU_VERSION, CONSENT_MESSAGE } from '../core/legal.js';
 import { toast, icon } from '../core/ui.js';
+import { CONFIRM_RETURN_PATH, authErrorFR, confirmEmailMessage } from '../core/auth-messages.js';
 import { mountGoogleButton } from '../components/google-button.js';
 import { mountNavbar } from '../components/navbar.js';
 import { mountFooter } from '../components/footer.js';
@@ -20,6 +21,20 @@ const submitBtn = form.querySelector('button[type="submit"]');
 const roleInputs = [...form.querySelectorAll('input[name="role"]')];
 const consent = form.querySelector('#r-consent');
 const consentError = () => (consent.checked ? null : CONSENT_MESSAGE);
+const lede = document.querySelector('#register-lede');
+const body = document.querySelector('#register-body');
+const confirmPanel = document.querySelector('#signup-confirm');
+const confirmText = document.querySelector('#signup-confirm-text');
+
+// Le compte est créé mais inactif : le formulaire disparaît, sinon le visiteur le
+// resoumet et tombe sur « Cet e-mail est déjà utilisé » sans comprendre.
+function showEmailConfirmation(email) {
+  lede.hidden = true;
+  body.hidden = true;
+  confirmText.textContent = confirmEmailMessage(email);
+  confirmPanel.hidden = false;
+  confirmPanel.querySelector('h2').scrollIntoView({ block: 'nearest' });
+}
 
 // Icônes des cartes rôle.
 document.querySelectorAll('.role-card__icon').forEach(el => { el.innerHTML = icon(el.dataset.icon); });
@@ -76,11 +91,16 @@ form.addEventListener('submit', async e => {
     const user = await auth.signUp({
       fullName: data.fullName, email: data.email, phone: data.phone,
       password: data.password, role: data.role, cguVersion: CGU_VERSION,
+      // Le lien de confirmation revient sur la connexion : c'est là que l'écran de rôle
+      // attend un compte connecté sans profil. Cette URL doit figurer dans les
+      // « Redirect URLs » du projet, sinon GoTrue la remplace par le Site URL.
+      emailRedirectTo: window.location.origin + CONFIRM_RETURN_PATH,
     });
+    if (user?.needsEmailConfirmation) { showEmailConfirmation(user.email); return; }
     toast('Compte créé !', 'success');
     location.replace(REDIRECT_FOR[user.role] ?? '/compte/');
   } catch (err) {
-    showError(err?.message || "Une erreur est survenue, veuillez réessayer.");
+    showError(authErrorFR(err));
   } finally {
     submitBtn.disabled = false;
   }

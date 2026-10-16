@@ -3,6 +3,13 @@
 (function () {
   'use strict';
 
+  // L'URL d'entrée est figée ici, avant toute création de client : supabase-js efface
+  // « ?code= » de la barre d'adresse dès qu'il l'a échangé. Sans cette capture, aucune
+  // page ne peut ensuite distinguer « on est arrivé en suivant un lien d'e-mail » de
+  // « on est arrivé en cliquant un bouton » — et c'est ce qui décide d'afficher ou non
+  // un formulaire de nouveau mot de passe.
+  const ENTRY_URL = { search: window.location.search, hash: window.location.hash };
+
   class AuthSupabase {
     // cfg : { SUPABASE_URL, SUPABASE_ANON_KEY } (config.js) ; db : instance de db.js (module)
     constructor(cfg, db) {
@@ -17,6 +24,19 @@
     // rendait la garde de session inopérante en mode réel (R21).
     current() {
       return this._user;
+    }
+
+    // L'URL sous laquelle la page a été chargée, avant le nettoyage de supabase-js.
+    entryUrl() {
+      return ENTRY_URL;
+    }
+
+    // Une session de récupération est une session valide sans être une connexion :
+    // « current() » lit un profil, ce qui n'est pas la question posée par la page
+    // « nouveau mot de passe » (le profil peut très bien exister déjà).
+    async hasSession() {
+      const { data } = await this.client.auth.getSession();
+      return !!(data && data.session && data.session.user);
     }
 
     // Hydrate le cache depuis la session enregistrée, puis l'entretient à chaque
@@ -56,18 +76,30 @@
       return data ? this._mapProfile(data) : null;
     }
 
-    async signUp({ fullName, email, phone, password, role, cguVersion }) {
+    async signUp({ fullName, email, phone, password, role, cguVersion, emailRedirectTo }) {
       if (!['client', 'prestataire'].includes(role)) throw new Error('Rôle invalide.');
-      const { data, error } = await this.client.auth.signUp({ email, password });
+      const { data, error } = await this.client.auth.signUp({
+        email, password,
+        // Les réponses du formulaire partent dans les métadonnées du compte. C'est la
+        // seule écriture possible quand le projet exige la confirmation d'e-mail : sans
+        // session, « profiles self insert » (id = auth.uid()) refuse toute insertion,
+        // donc le profil ne peut s'écrire qu'au retour du lien.
+        options: {
+          data: { full_name: fullName, phone: phone ?? '', role, cgu_version: cguVersion },
+          emailRedirectTo,
+        },
+      });
       if (error) {
         if (/already registered/i.test(error.message)) throw new Error('Cet e-mail est déjà utilisé.');
         throw new Error(error.message);
       }
       const userId = data.user.id;
+      const { data: { session } } = await this.client.auth.getSession();
+      // Pas de session = confirmation d'e-mail attendue. Ce n'est pas une erreur, et
+      // surtout pas un compte à moitié créé : l'affichage doit le dire clairement.
+      if (!session || !session.user) return { needsEmailConfirmation: true, email };
       await this._provision({ id: userId, fullName, email }, role, phone, cguVersion);
-      // Connexion directe si la confirmation d'e-mail est désactivée sur le projet.
-      try { await this.signIn(email, password); } catch { /* confirmation d'e-mail requise */ }
-      return this._user ?? await this._profile(userId);
+      return await this.signIn(email, password);
     }
 
     // Écriture du profil et, pour un prestataire, de sa fiche en attente. Une seule
@@ -111,7 +143,10 @@
       const user = session && session.user;
       if (!user) return null;
       if (await this._profileOrNull(user.id)) return null;
-      return { id: user.id, email: user.email ?? '', fullName: this._nameFrom(user) };
+      const meta = user.user_metadata || {};
+      return { id: user.id, email: user.email ?? '', fullName: this._nameFrom(user),
+        phone: typeof meta.phone === 'string' ? meta.phone : '',
+        role: ['client', 'prestataire'].includes(meta.role) ? meta.role : null };
     }
 
     _nameFrom(user) {
@@ -125,7 +160,7 @@
       if (!['client', 'prestataire'].includes(role)) throw new Error('Rôle invalide.');
       const pending = await this.pendingSignup();
       if (!pending) throw new Error('Aucun compte à compléter.');
-      await this._provision(pending, role, '', cguVersion);
+      await this._provision(pending, role, pending.phone, cguVersion);
       this._user = await this._profile(pending.id);
       if (this._user.suspended) {
         await this.signOut();
@@ -159,11 +194,23 @@
       return () => subscription.unsubscribe();
     }
 
+    // Le chemin littéral est celui de RECOVERY_RETURN_PATH dans core/auth-messages.js ;
+    // tests/auth.test.js vérifie les deux au lieu d'un import impossible ici (script classique).
     async requestPasswordReset(email) {
       const { error } = await this.client.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + '/auth/connexion.html',
+        redirectTo: window.location.origin + '/auth/reinitialisation.html',
       });
       if (error) throw new Error(error.message);
+    }
+
+    // Le lien de réinitialisation ouvre une session qui n'a d'autre droit que celui-là :
+    // updateUser refuse un mot de passe hors session de récupération, ce qui rend le
+    // formulaire de la page inutilisable ailleurs — et l'erreur doit rester lisible.
+    async updatePassword(password) {
+      const { data, error } = await this.client.auth.updateUser({ password });
+      if (error) throw new Error(error.message);
+      if (data && data.user) this._user = await this._profileOrNull(data.user.id);
+      return this._user;
     }
 
     async getProviderIdFor(userId) {

@@ -26,7 +26,20 @@
       <div class="container">
         <div class="auth-card auth-card--wide">
           <h1>Inscription</h1>
-          <p class="muted">Créez votre compte gratuit en quelques instants.</p>
+          <p class="muted" id="register-lede">Créez votre compte gratuit en quelques instants.</p>
+
+          <!-- Affiché quand le projet exige la confirmation de l'adresse : le compte est
+               créé, le mot de passe est le bon, mais aucune session n'existe encore et le
+               profil ne peut pas s'écrire avant. Le formulaire ne doit plus rester sous
+               les yeux, sinon le visiteur le resoumet et tombe sur « e-mail déjà utilisé ». -->
+          <div class="pending-signup" id="signup-confirm" hidden>
+            <h2>Confirmez votre adresse e-mail</h2>
+            <p class="muted" id="signup-confirm-text"></p>
+            <p class="muted">Sans ce clic, le compte reste inactif : le lien expire au bout de quelques heures et il faudra relancer l’inscription.</p>
+            <a class="btn btn--primary btn--block" href="/auth/connexion.html">Aller à la connexion</a>
+          </div>
+
+          <div id="register-body">
           <div id="reg-errors" class="form-errors" role="alert" hidden></div>
           <form id="register-form" action="#" method="post">
             <fieldset class="role-picker">
@@ -103,6 +116,7 @@
             </p>
           </div>
           <p class="auth-alt">Déjà un compte ? <a href="/auth/connexion.html">Se connecter</a></p>
+          </div>
         </div>
         <p class="auth-back"><a class="btn btn--outline" href="/">Retour à l'accueil</a></p>
       </div>

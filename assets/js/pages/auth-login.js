@@ -8,6 +8,7 @@ import { HOME_FOR } from '../core/guards.js';
 import { CGU_VERSION, CONSENT_MESSAGE } from '../core/legal.js';
 import { toast, esc, icon } from '../core/ui.js';
 import { clearIntent, readIntent, safeNext } from '../core/oauth.js';
+import { authErrorFR, hasAuthReturnCode } from '../core/auth-messages.js';
 import { mountGoogleButton, resolveOAuthReturn } from '../components/google-button.js';
 import { mountPasswordToggles } from '../components/password-toggle.js';
 import { mountNavbar } from '../components/navbar.js';
@@ -77,7 +78,7 @@ document.querySelector('#forgot-link').addEventListener('click', async e => {
     await auth.requestPasswordReset(email);
     toast('E-mail de réinitialisation envoyé. Consultez votre boîte de réception.', 'success');
   } catch (err) {
-    toast(err?.message || "Une erreur est survenue, veuillez réessayer.", 'error');
+    toast(authErrorFR(err), 'error');
   }
 });
 
@@ -99,7 +100,7 @@ form.addEventListener('submit', async e => {
     const user = await auth.signIn(emailInput.value.trim(), passwordInput.value);
     location.replace(redirectTarget(user));
   } catch (err) {
-    showError(err?.message || 'Identifiants invalides.');
+    showError(authErrorFR(err));
   } finally {
     submitBtn.disabled = false;
   }
@@ -162,4 +163,16 @@ if (outcome.kind === 'signed') {
   location.replace(redirectTarget(outcome.user, outcome.next));
 } else if (outcome.kind === 'pending') {
   showPendingPanel(outcome.pending, outcome.role);
+}
+
+// Seconde porte d'entrée sur cet écran : la confirmation d'e-mail. Le lien arrive ici avec
+// un « code » que supabase-js échange contre une session, mais la ligne « profiles » n'a
+// pas pu être écrite à l'inscription — sans session, « profiles self insert » refuse
+// l'insertion. Le compte est donc connecté et sans profil : c'est exactement l'état que
+// l'écran de choix du rôle traitait déjà pour Google.
+if (outcome.kind === 'none' && !isDemoMode() && hasAuthReturnCode(auth.entryUrl())) {
+  await auth.ready();
+  const pending = await auth.pendingSignup();
+  if (pending) showPendingPanel(pending, pending.role);
+  else if (auth.current()) location.replace(redirectTarget(auth.current()));
 }

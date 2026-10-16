@@ -112,6 +112,23 @@ export class DemoAuth {
     throw new Error('Mode démo : aucun e-mail ne peut être envoyé. Utilisez les comptes de démonstration.');
   }
 
+  // En démonstration, aucun lien d'e-mail n'existe jamais : la page de réinitialisation
+  // n'est donc pas atteignable honnêtement, et le contrat est rendu explicite plutôt
+  // que simulé (le visiteur qui ouvre l'URL par lui-même doit lire pourquoi ça ne marche pas).
+  async updatePassword() {
+    throw new Error('Mode démo : la réinitialisation du mot de passe exige un projet Supabase et une passerelle d’e-mail.');
+  }
+
+  // Même contrat qu'AuthSupabase : l'URL sous laquelle la page a été chargée, et
+  // l'existence d'une session, indépendamment du profil.
+  entryUrl() {
+    return { search: window.location.search, hash: window.location.hash };
+  }
+
+  async hasSession() {
+    return Boolean(this.storage.getItem(SESSION_KEY));
+  }
+
   async getProviderIdFor(userId) {
     const state = this._state();
     return state.providers.find(p => p.ownerId === userId)?.id ?? null;

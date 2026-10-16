@@ -94,7 +94,7 @@ externe · ⛔ hors périmètre de la phase 1.
 | Inscription / connexion / déconnexion | ✅ | trois rôles : client, prestataire, administrateur ; redirection vers l'espace du rôle |
 | Connexion « Continuer avec Google » | ⚙️ | bouton sur connexion et inscription, retour OAuth avec **choix du rôle confirmé par l'utilisateur** (client ou prestataire, jamais administrateur) ; code en place et simulé, **jamais exercé contre le vrai fournisseur Google** (voir §7bis) |
 | Gardes de session | ✅ | les 14 pages protégées redirigent sans session ; un client appelé sur `/admin/` revient sur son espace |
-| Mot de passe oublié | ⚙️ | mode démo : **aucun e-mail n'est envoyé**, la page le dit et renvoie vers les comptes de démonstration. Mode réel : e-mail envoyé par Supabase |
+| Mot de passe oublié | ⚙️ | mode démo : **aucun e-mail n'est envoyé**, la page le dit. Mode réel : e-mail envoyé par Supabase, puis page [`auth/reinitialisation.html`](auth/reinitialisation.html) qui **ne propose le formulaire que si elle est atteinte par le lien** (sinon elle explique « lien manquant » ou « lien expiré ») ; son URL doit figurer dans les *Redirect URLs* du projet (§7bis) |
 
 ### Espace client
 
@@ -224,12 +224,15 @@ non validé** tant que la procédure ci-dessous n'a pas été jouée une fois su
    - [`supabase/seed.sql`](supabase/seed.sql) — jeu de démonstration (facultatif).
 3. Renseigner dans [`assets/js/core/config.js`](assets/js/core/config.js) :
    `SUPABASE_URL` (URL du projet) et `SUPABASE_ANON_KEY` (**clé anonyme**, jamais la clé `service_role`).
-4. Dans **Authentication → Sign In / Providers → Email**, **désactiver « Confirm email »**.
-   L'application écrit elle-même la ligne `profiles` juste après l'inscription, et cette écriture
-   suppose une session déjà ouverte. Avec la confirmation d'e-mail activée, l'inscription échoue
-   (le compte existe côté Supabase, mais sans profil).
-5. **Authentication → URL Configuration** : ajouter l'URL du site dans *Site URL* et
-   *Redirect URLs* (utile pour le mot de passe oublié et toute redirection d'authentification).
+4. Dans **Authentication → Sign In / Providers → Email**, « Confirm email » peut être **activé ou
+   désactivé** : les deux parcours sont gérés. Désactivé, l'inscription ouvre une session et écrit
+   la ligne `profiles` immédiatement. Activé, aucune session n'existe encore — et la politique RLS
+   « profiles self insert » (`id = auth.uid()`) refuse toute écriture : l'application conserve donc
+   le nom, le téléphone, le rôle et la version des CGU dans les **métadonnées** du compte, affiche
+   « Confirmez votre adresse e-mail », et écrit le profil au retour du lien, sur la page de
+   connexion (l'écran de rôle reprend le rôle choisi).
+5. **Authentication → URL Configuration** : *Site URL* et *Redirect URLs*, listés au §7bis (ils
+   décident où atterrissent le lien de confirmation d'inscription et le lien « Mot de passe oublié »).
 6. Recharger la page : la bannière « Mode démonstration » disparaît, les données viennent de
    Supabase. Laisser les deux champs vides ramène au mode démonstration.
 
@@ -289,9 +292,14 @@ Aucune donnée de session Google n'a été fabriquée pour faire croire au contr
    - Noter le **Client ID** et le **Client secret**.
 2. Supabase → **Authentication → URL Configuration** :
    - *Site URL* : `https://<domaine>` (production),
-   - *Redirect URLs* : ajouter **les deux** retours attendus par l'application —
-     `http://localhost:4173/auth/connexion.html` pour les tests locaux et
-     `https://<domaine>/auth/connexion.html` pour la production.
+   - *Redirect URLs* : les quatre retours attendus par l'application, chacun en local **et** en
+     production —
+     `http://localhost:4173/auth/connexion.html` et `https://<domaine>/auth/connexion.html`
+     (retour Google et retour du lien de confirmation d'inscription),
+     `http://localhost:4173/auth/reinitialisation.html` et
+     `https://<domaine>/auth/reinitialisation.html` (lien « Mot de passe oublié »).
+     Une `redirectTo` absente de cette liste est **silencieusement remplacée** par le *Site URL* :
+     le lien tombe alors sur l'accueil au lieu du formulaire attendu.
 3. Supabase → **Authentication → Sign In / Providers → Google** : activer le fournisseur et coller
    le Client ID / Client secret de l'étape 1.
 4. Revenir sur la page de connexion et cliquer « Continuer avec Google » : le consentement
@@ -300,8 +308,9 @@ Aucune donnée de session Google n'a été fabriquée pour faire croire au contr
 
 **Rappels utiles**
 
-- « Confirm email » doit rester **désactivé** (§7, point 4) : un compte Google arrive sans ligne
-  `profiles`, et c'est précisément ce que l'écran de rôle vient compléter.
+- « Confirm email » ne bloque plus l'inscription (voir §7, point 4) : le compte connecté sans ligne
+  `profiles` est exactement l'état que l'écran de rôle sait compléter, qu'il arrive de Google ou du
+  lien de confirmation.
 - Le nom affiché sur cet écran vient des métadonnées du fournisseur (`user_metadata.full_name`,
   sinon `name`, sinon la partie locale de l'adresse e-mail).
 - Un compte Google suspendu par un administrateur est déconnecté dès la tentative d'accès.

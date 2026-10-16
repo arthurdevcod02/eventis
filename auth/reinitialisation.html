@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Nouveau mot de passe — Eventis</title>
+  <meta name="description" content="Choisissez un nouveau mot de passe en suivant le lien reçu par e-mail.">
+  <script>try{document.documentElement.dataset.theme=localStorage.getItem('eventis_theme')||''}catch(e){}</script>
+  <link rel="icon" type="image/svg+xml" href="/assets/icons/icon.svg">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#F97316">
+  <link rel="stylesheet" href="/assets/css/fonts.css">
+  <link rel="stylesheet" href="/assets/css/tokens.css">
+  <link rel="stylesheet" href="/assets/css/base.css">
+  <link rel="stylesheet" href="/assets/css/components.css">
+  <link rel="stylesheet" href="/assets/css/pages/auth.css">
+  <script src="/assets/vendor/gsap.min.js" defer></script>
+  <script src="/assets/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="/assets/vendor/supabase-js.min.js" defer></script>
+  <script src="/assets/js/core/auth-supabase.js" defer></script>
+</head>
+<body>
+  <header id="site-header"></header>
+  <main id="main">
+    <section class="section auth-page">
+      <div class="container">
+        <div class="auth-card">
+          <h1>Nouveau mot de passe</h1>
+
+          <!-- Aucun formulaire n'est proposé tant que la page n'a pas été atteinte par un
+               lien d'e-mail : un champ de mot de passe qui refuse ensuite toute session
+               serait une promesse vide. C'est ce panneau qui explique, ou qui renvoie. -->
+          <div class="pending-signup" id="recovery-notice" hidden>
+            <h2 id="recovery-notice-title">Réinitialisation impossible</h2>
+            <p class="muted" id="recovery-notice-text"></p>
+            <a class="btn btn--primary btn--block" href="/auth/connexion.html">Retour à la connexion</a>
+          </div>
+
+          <div id="recovery-body" hidden>
+            <p class="muted">Choisissez le mot de passe avec lequel vous vous connecterez à partir de maintenant.</p>
+            <div id="recovery-errors" class="form-errors" role="alert" hidden></div>
+            <form id="recovery-form" action="#" method="post">
+              <div class="field">
+                <label for="p-password">Nouveau mot de passe</label>
+                <div class="pw-field">
+                  <input id="p-password" name="password" type="password" autocomplete="new-password" required minlength="8">
+                  <button type="button" class="pw-toggle" data-target="p-password" aria-label="Afficher le mot de passe" aria-pressed="false"></button>
+                </div>
+              </div>
+              <div class="field">
+                <label for="p-password2">Confirmer le mot de passe</label>
+                <div class="pw-field">
+                  <input id="p-password2" name="password2" type="password" autocomplete="new-password" required minlength="8">
+                  <button type="button" class="pw-toggle" data-target="p-password2" aria-label="Afficher le mot de passe" aria-pressed="false"></button>
+                </div>
+              </div>
+              <button class="btn btn--primary btn--block" type="submit">Enregistrer le mot de passe</button>
+            </form>
+          </div>
+
+          <p class="auth-alt">Vous n’avez pas reçu de lien ? <a href="/auth/connexion.html">Demander un nouveau lien</a></p>
+        </div>
+        <p class="auth-back"><a class="btn btn--outline" href="/">Retour à l'accueil</a></p>
+      </div>
+    </section>
+  </main>
+  <footer id="site-footer"></footer>
+  <script type="module" src="/assets/js/pages/auth-recovery.js"></script>
+</body>
+</html>

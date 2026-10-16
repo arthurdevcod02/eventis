@@ -1,7 +1,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { memoryStorage } from './helpers/memory-storage.js';
 import { DemoAuth } from '../assets/js/core/auth-demo.js';
+import {
+  RECOVERY_RETURN_PATH, authErrorFR, confirmEmailMessage, hasAuthReturnCode, recoveryUrl, validateNewPassword,
+} from '../assets/js/core/auth-messages.js';
 
 const makeAuth = () => new DemoAuth(memoryStorage());
 
@@ -63,11 +67,13 @@ test('comptes démo présents et signIn fonctionne', async () => {
 // renvoyait une Promise (l'ancien code), la garde la jugeait toujours vraie et
 // laissait passer n'importe quel visiteur sur une page protégée en mode réel.
 // Ces tests figent le contrat avec un faux client Supabase : pas d'instance réelle.
-const { readFileSync } = await import('node:fs');
+const FAKE_LOCATION = { search: '', hash: '', origin: 'https://eventis.test' };
 
-function loadAuthSupabase(client) {
+// `location` est prêté au faux window : auth-supabase.js le lit dès son évaluation
+// pour figer l'URL d'entrée, avant que supabase-js n'efface « ?code= ».
+function loadAuthSupabase(client, { location = FAKE_LOCATION } = {}) {
   const src = readFileSync(new URL('../assets/js/core/auth-supabase.js', import.meta.url), 'utf8');
-  const fakeWindow = { supabase: { createClient: () => client } };
+  const fakeWindow = { supabase: { createClient: () => client }, location };
   new Function('window', src)(fakeWindow); // script classique : il écrit dans window
   const cfg = { SUPABASE_URL: 'https://fake.supabase.co', SUPABASE_ANON_KEY: 'anon' };
   return new fakeWindow.EventisAuthSupabase.AuthSupabase(cfg, {});
@@ -79,7 +85,7 @@ const PROFILE_ROW = { id: 'u1', full_name: 'Kossi', email: 'kossi@example.tg', p
 // par les tests — ce que le code a réellement demandé à Supabase, pas ce qu'il dit.
 function fakeClient({ session = true, profile = PROFILE_ROW, metadata = {} } = {}) {
   const user = session ? { id: 'u1', email: 'kossi@example.tg', user_metadata: metadata } : null;
-  const calls = { oAuth: [], inserts: [] };
+  const calls = { oAuth: [], inserts: [], signUp: [], reset: [], update: [] };
   const rows = { profiles: profile, providers: null };
   const table = (name) => ({
     select: () => ({
@@ -111,6 +117,18 @@ function fakeClient({ session = true, profile = PROFILE_ROW, metadata = {} } = {
       signInWithOAuth: async (options) => {
         calls.oAuth.push(options);
         return { data: { url: 'https://accounts.google.com/o/oauth2/v2/auth?client_id=x', provider: 'google' }, error: null };
+      },
+      signUp: async (params) => {
+        calls.signUp.push(params);
+        return { data: { user: { id: 'u1', email: params.email }, session: user ? { user } : null }, error: null };
+      },
+      resetPasswordForEmail: async (email, options) => {
+        calls.reset.push({ email, options });
+        return { error: null };
+      },
+      updateUser: async (attributes) => {
+        calls.update.push(attributes);
+        return { data: { user }, error: null };
       },
     },
     from: (name) => table(name),
@@ -171,7 +189,15 @@ test('signInWithGoogle : une erreur fournisseur est remontée, aucune URL invent
 test('pendingSignup : une session Google sans ligne profiles est un compte à compléter', async () => {
   const auth = loadAuthSupabase(fakeClient({ profile: null, metadata: { full_name: 'Awa Diallo' } }));
   assert.deepEqual(await auth.pendingSignup(),
-    { id: 'u1', email: 'kossi@example.tg', fullName: 'Awa Diallo' });
+    { id: 'u1', email: 'kossi@example.tg', fullName: 'Awa Diallo', phone: '', role: null });
+});
+
+test('pendingSignup : les métadonnées de l’inscription portent le téléphone et le rôle', async () => {
+  const auth = loadAuthSupabase(fakeClient({ profile: null,
+    metadata: { full_name: 'Awa Diallo', phone: '+228 90 00 00 00', role: 'prestataire' } }));
+  const pending = await auth.pendingSignup();
+  assert.equal(pending.phone, '+228 90 00 00 00', 'le téléphone saisi à l’inscription survit au lien de confirmation');
+  assert.equal(pending.role, 'prestataire');
 });
 
 test('pendingSignup : le nom vient des métadonnées Google, sinon de l’e-mail', async () => {
@@ -235,3 +261,150 @@ test('démo : pendingSignup existe et répond toujours null (aucun OAuth en dém
   const demo = makeAuth();
   assert.equal(await demo.pendingSignup(), null);
 });
+
+// --- Réinitialisation du mot de passe ----------------------------------------
+// Le parcours « mot de passe oublié » n’existait pas : le lien d’e-mail renvoyait sur
+// la page de connexion, sans formulaire. Ces tests figent les trois pièces du contrat :
+// savoir qu’on arrive par un lien (entryUrl + hasAuthReturnCode), demander la
+// réinitialisation vers la bonne page, et écrire le nouveau mot de passe.
+
+test('hasAuthReturnCode : reconnaît le code PKCE et l’ancien flux implicite', () => {
+  assert.equal(hasAuthReturnCode({ search: '?code=abc123' }), true);
+  assert.equal(hasAuthReturnCode({ search: '?foo=1&code=abc' }), true);
+  assert.equal(hasAuthReturnCode({ hash: '#access_token=xyz&type=recovery' }), true);
+  assert.equal(hasAuthReturnCode({ hash: '#access_token=xyz&type=signup' }), true);
+  // Rien d’autre ne doit ouvrir le formulaire : un simple ?code= absent = on n’a pas suivi de lien.
+  assert.equal(hasAuthReturnCode({ search: '?next=/compte/' }), false);
+  assert.equal(hasAuthReturnCode({ hash: '#token=xyz' }), false);
+  assert.equal(hasAuthReturnCode(), false, 'appelé sans argument : pas de lien, pas de formulaire');
+});
+
+test('entryUrl() conserve l’URL d’entrée telle que la page a été chargée', async () => {
+  const auth = loadAuthSupabase(fakeClient(), { location: { search: '?code=abc123', hash: '', origin: 'https://eventis.test' } });
+  assert.deepEqual(auth.entryUrl(), { search: '?code=abc123', hash: '' });
+});
+
+test('recoveryUrl : chemin de retour identique à la page créée, sans doublon de barre oblique', () => {
+  assert.equal(recoveryUrl('https://eventis-app.netlify.app'), 'https://eventis-app.netlify.app' + RECOVERY_RETURN_PATH);
+  assert.equal(recoveryUrl('https://eventis-app.netlify.app/'), 'https://eventis-app.netlify.app' + RECOVERY_RETURN_PATH);
+});
+
+test('le chemin littéral du mode réel est bien celui de RECOVERY_RETURN_PATH', () => {
+  // auth-supabase.js est un script classique : il ne peut pas importer auth-messages.js.
+  // Cette vérification est la seule garde contre les deux chaînes qui divergent —
+  // une divergence enverrait le lien d’e-mail sur une page qui n’existe pas.
+  const src = readFileSync(new URL('../assets/js/core/auth-supabase.js', import.meta.url), 'utf8');
+  assert.ok(src.includes(`'${RECOVERY_RETURN_PATH}'`),
+    'requestPasswordReset() doit demander exactement le chemin de la page de réinitialisation');
+});
+
+test('requestPasswordReset : demande l’e-mail avec l’URL de retour de la page de réinitialisation', async () => {
+  const client = fakeClient();
+  const auth = loadAuthSupabase(client);
+  await auth.requestPasswordReset('kossi@example.tg');
+  assert.equal(client.calls.reset.length, 1);
+  assert.equal(client.calls.reset[0].email, 'kossi@example.tg');
+  assert.equal(client.calls.reset[0].options.redirectTo, 'https://eventis.test' + RECOVERY_RETURN_PATH);
+});
+
+test('updatePassword : écrit le mot de passe puis rend le profil lisible', async () => {
+  const client = fakeClient();
+  const auth = loadAuthSupabase(client);
+  const user = await auth.updatePassword('nouveauMotDePasse');
+  assert.deepEqual(client.calls.update, [{ password: 'nouveauMotDePasse' }]);
+  assert.equal(user.id, 'u1');
+  assert.equal(auth.current().id, 'u1', 'après mise à jour, current() reflète la session');
+});
+
+test('updatePassword : une erreur serveur est remontée, le cache reste vide', async () => {
+  const client = fakeClient();
+  client.auth.updateUser = async () => ({ data: { user: null }, error: { message: 'invalid code' } });
+  const auth = loadAuthSupabase(client);
+  await assert.rejects(() => auth.updatePassword('trop-court'), /invalid code/);
+  assert.equal(auth.current(), null);
+});
+
+test('validateNewPassword : mêmes règles qu’à l’inscription', () => {
+  assert.equal(validateNewPassword('1234567', '1234567'), 'Le mot de passe doit contenir au moins 8 caractères.');
+  assert.equal(validateNewPassword('12345678', '87654321'), 'Les mots de passe ne correspondent pas.');
+  assert.equal(validateNewPassword('12345678', '12345678'), '');
+});
+
+test('mode démo : updatePassword refuse au lieu de simuler une réinitialisation', async () => {
+  const auth = makeAuth();
+  await assert.rejects(() => auth.updatePassword('motdepasse1'), /Supabase/);
+});
+
+// --- Messages d’erreur français -----------------------------------------------
+
+test('authErrorFR : le corps vide « {} » ne s’affiche jamais tel quel', () => {
+  assert.equal(authErrorFR(new Error('{}')), 'L’opération a échoué sans que le serveur précise pourquoi. Réessayez, ou utilisez votre e-mail et votre mot de passe.');
+  assert.notEqual(authErrorFR('{}'), '{}');
+  assert.equal(authErrorFR(new Error('   ')), authErrorFR(new Error('{}')));
+});
+
+test('authErrorFR : chaque réponse connue devient une consigne en français', () => {
+  const cases = [
+    ['Error sending recovery email', 'passerelle d’e-mail'],
+    ['Email amount over rate limit', 'Attendez une heure'],
+    ['Email not confirmed', 'confirmée'],
+    ['Invalid login credentials', 'incorrect'],
+    ['Could not find a user with this login', 'Aucun compte Eventis'],
+    ['User already registered', 'déjà utilisé'],
+    ['Password should be at least 6 characters.', 'au moins 8 caractères'],
+    ['Address is not valid. email address is invalid', 'refusée par le serveur'],
+    ['invalid code: token has expired', 'expiré'],
+    ['JSON object requested, multiple (or no) rows returned', 'refusé la lecture'],
+    ['Failed to fetch', 'joindre le serveur'],
+  ];
+  for (const [raw, expected] of cases) {
+    const message = authErrorFR(new Error(raw));
+    assert.notEqual(message, raw, `« ${raw} » doit être traduit`);
+    assert.ok(message.includes(expected), `« ${raw} » → ${message} doit contenir « ${expected} »`);
+  }
+});
+
+test('authErrorFR : une réponse inconnue est renvoyée telle quelle, jamais masquée', () => {
+  assert.equal(authErrorFR(new Error('Bizantian error: quorum lost')), 'Bizantian error: quorum lost');
+});
+
+test('confirmEmailMessage : nomme l’adresse à ouvrir', () => {
+  assert.match(confirmEmailMessage('awa@example.tg'), /awa@example\.tg/);
+  assert.match(confirmEmailMessage('awa@example.tg'), /confirmation/i);
+});
+
+// --- Inscription quand le projet exige la confirmation d’e-mail ---------------
+
+test('signUp : les réponses du formulaire partent dans les métadonnées du compte', async () => {
+  const client = fakeClient();
+  const auth = loadAuthSupabase(client);
+  const user = await auth.signUp({ fullName: 'Awa Diallo', email: 'awa@example.tg', phone: '+228 90 00 00 00',
+    password: 'motdepasse1', role: 'client', cguVersion: '2026-10-15',
+    emailRedirectTo: 'https://eventis.test/auth/connexion.html' });
+  const call = client.calls.signUp[0];
+  assert.equal(call.options.emailRedirectTo, 'https://eventis.test/auth/connexion.html');
+  assert.deepEqual(call.options.data, { full_name: 'Awa Diallo', phone: '+228 90 00 00 00',
+    role: 'client', cgu_version: '2026-10-15' },
+    'le consentement et le rôle survivent au lien de confirmation : sans session, RLS interdit toute écriture');
+  assert.equal(user.role, 'client');
+});
+
+test('signUp : sans session après le lien (confirmation requise), rien n’est écrit et l’état est annoncé', async () => {
+  const client = fakeClient({ session: false });
+  const auth = loadAuthSupabase(client);
+  const result = await auth.signUp({ fullName: 'Awa', email: 'awa@example.tg', phone: '', password: 'motdepasse1',
+    role: 'prestataire', cguVersion: '2026-10-15', emailRedirectTo: 'https://eventis.test/auth/connexion.html' });
+  assert.deepEqual(result, { needsEmailConfirmation: true, email: 'awa@example.tg' });
+  assert.equal(client.calls.inserts.length, 0,
+    'aucune insertion tentée : « profiles self insert » exige auth.uid() et échouerait sans session');
+});
+
+test('signUp : le rôle attendu au retour de confirmation est repris à la complétion', async () => {
+  const client = fakeClient({ profile: null, metadata: { full_name: 'Awa', phone: '+228 90 00 00 00', role: 'prestataire' } });
+  const auth = loadAuthSupabase(client);
+  const user = await auth.completeSignup({ role: 'prestataire', cguVersion: '2026-10-15' });
+  assert.equal(user.role, 'prestataire');
+  assert.equal(client.calls.inserts[0].row.phone, '+228 90 00 00 00', 'le téléphone saisi à l’inscription arrive en base');
+  assert.equal(client.calls.inserts[1].table, 'providers');
+});
+

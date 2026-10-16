@@ -28,11 +28,12 @@
           <h1>Connexion</h1>
           <p class="muted">Accédez à votre espace pour gérer vos demandes et vos messages.</p>
 
-          <!-- Affiché seulement au retour d'un compte Google fraîchement connecté :
-               la session existe, le profil « profiles » n'existe pas encore. -->
+          <!-- Affiché quand une session existe sans ligne « profiles » : compte qui arrive
+               par Google, ou qui vient de confirmer son adresse par e-mail. Dans les deux cas
+               rien n'a pu être écrit avant : la politique d'insertion exige une session. -->
           <div class="pending-signup" id="pending-signup" hidden>
             <h2>Bienvenue <span id="pending-name"></span></h2>
-            <p class="muted">Votre compte Google vient d’être connecté. Dites-nous ce que vous venez faire sur Eventis&nbsp;; vous pourrez compléter votre fiche ensuite.</p>
+            <p class="muted">Votre compte vient d’être connecté. Dites-nous ce que vous venez faire sur Eventis&nbsp;; vous pourrez compléter votre fiche ensuite.</p>
             <fieldset class="role-picker">
               <legend class="role-picker__legend">Je viens</legend>
               <label class="role-card">
