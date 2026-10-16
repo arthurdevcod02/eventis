@@ -6,6 +6,7 @@ import { DemoAuth } from '../assets/js/core/auth-demo.js';
 import {
   RECOVERY_RETURN_PATH, authErrorFR, confirmEmailMessage, hasAuthReturnCode, recoveryUrl, validateNewPassword,
 } from '../assets/js/core/auth-messages.js';
+import { signOutTarget } from '../assets/js/core/guards.js';
 
 const makeAuth = () => new DemoAuth(memoryStorage());
 
@@ -408,3 +409,24 @@ test('signUp : le rôle attendu au retour de confirmation est repris à la compl
   assert.equal(client.calls.inserts[1].table, 'providers');
 });
 
+
+// --- Où mène une déconnexion ---
+test('signOutTarget : la déconnexion quitte toute page protégée vers l’accueil', () => {
+  assert.equal(signOutTarget('/compte/'), '/');
+  assert.equal(signOutTarget('/compte/messages.html'), '/');
+  assert.equal(signOutTarget('/espace-prestataire/'), '/');
+  assert.equal(signOutTarget('/admin/avis.html'), '/');
+  assert.equal(signOutTarget('/catalogue.html'), '/');
+});
+
+test('signOutTarget : jamais l’espace d’un rôle ni la page de connexion en cible', () => {
+  const cible = signOutTarget('/compte/');
+  assert.ok(!Object.values({ client: '/compte/', prestataire: '/espace-prestataire/', admin: '/admin/' }).includes(cible),
+    'rediriger vers un espace protégé relancerait la garde sur une session morte');
+  assert.notEqual(cible, '/auth/connexion.html',
+    'la page de connexion présuppose qu’on veut se reconnecter tout de suite');
+});
+
+test('signOutTarget : déjà sur l’accueil = pas de navigation inutile', () => {
+  assert.equal(signOutTarget('/'), null);
+});

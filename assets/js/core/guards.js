@@ -2,6 +2,15 @@ import { auth } from './auth.js';
 
 export const HOME_FOR = { client: '/compte/', prestataire: '/espace-prestataire/', admin: '/admin/' };
 
+// Cible d'une déconnexion : l'accueil, quelle que soit la page d'où l'on part.
+// Jamais HOME_FOR — la session vient de disparaître et la garde renverrait de là.
+// Jamais /auth/connexion.html non plus : cela présupposerait une envie de se
+// reconnecter, alors que « Se connecter » est déjà un clic plus loin dans la barre.
+// null = on y est déjà, une navigation ne ferait que recharger la page.
+export function signOutTarget(pathname) {
+  return pathname === '/' ? null : '/';
+}
+
 export function requireAuth(roles = []) {
   const user = auth.current();
   if (!user) {

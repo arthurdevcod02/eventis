@@ -1,7 +1,7 @@
 // navbar.js — bannière mode démo + navigation sticky + bascule de thème + compte.
 import { isDemoMode } from '../core/config.js';
 import { auth } from '../core/auth.js';
-import { HOME_FOR } from '../core/guards.js';
+import { HOME_FOR, signOutTarget } from '../core/guards.js';
 import { icon, esc, toast } from '../core/ui.js';
 
 const NAV_LINKS = [
@@ -14,6 +14,20 @@ const NAV_LINKS = [
 const SVG_ATTRS = 'xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"';
 const SUN = `<svg ${SVG_ATTRS}><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>`;
 const MOON = `<svg ${SVG_ATTRS}><path d="M20.5 14.5A8.5 8.5 0 0 1 9.5 3.5a8.5 8.5 0 1 0 11 11z"/></svg>`;
+
+const SIGNOUT_MESSAGE = 'Vous êtes déconnecté·e.';
+// Le toast ne survit pas au changement de page : la confirmation de la déconnexion
+// passe donc par un jalon qu'une seule page lit, celle qu'elle fait apparaître.
+const SIGNOUT_JALON = 'eventis_signout_flash';
+
+function takeSignoutJalon() {
+  try {
+    const set = sessionStorage.getItem(SIGNOUT_JALON);
+    if (set) sessionStorage.removeItem(SIGNOUT_JALON);
+    return set;
+  } catch { /* stockage indisponible : la déconnexion est faite, sans message */ }
+  return null;
+}
 
 const themeIcon = () => (document.documentElement.dataset.theme === 'dark' ? SUN : MOON);
 
@@ -88,8 +102,14 @@ export function mountNavbar(active = '') {
 
     header.querySelectorAll('[data-signout]').forEach(btn =>
       btn.addEventListener('click', async () => {
-        await auth.signOut();
-        toast('Vous êtes déconnecté·e.', 'success');
+        try { await auth.signOut(); }
+        catch { /* Supabase injoignable : la session locale est tombée, on quitte quand même la page protégée */ }
+        const target = signOutTarget(location.pathname);
+        if (!target) { toast(SIGNOUT_MESSAGE, 'success'); return; }
+        try { sessionStorage.setItem(SIGNOUT_JALON, '1'); } catch { /* message perdu, déconnexion faite */ }
+        // requireAuth ne joue qu'au chargement : sans navigation, les demandes,
+        // messages et fiches de l'espace quitté resteraient affichés à l'écran.
+        location.replace(target);
       }));
 
     // Menu compte (bureau + mobile : le bloc auth est rendu deux fois, il faut brancher les deux)
@@ -153,6 +173,7 @@ export function mountNavbar(active = '') {
   };
 
   render();
+  if (takeSignoutJalon()) toast(SIGNOUT_MESSAGE, 'success');
   // Mode réel : la session n'est pas encore lisible au premier rendu. ready()
   // l'hydrate puis relance le rendu, sinon un visiteur connecté verrait
   // « Se connecter » jusqu'au prochain clic.

@@ -338,6 +338,13 @@ Aucune donnée de session Google n'a été fabriquée pour faire croire au contr
   (contrôlé côté inscription, profil et tableau admin).
 - **Service worker strict** : uniquement les `GET` de la même origine, aucune mise en cache des
   URLs paramétrées, `sw.js` jamais caché, et les appels vers `*.supabase.co` explicitement exclus.
+- **La déconnexion vide l'écran.** `signOut()` seul ne quittait pas la page : `requireAuth` ne joue
+  qu'au chargement, donc les demandes, messages et fiches de l'espace quitté restaient affichés
+  après la déconnexion. Le bouton « Déconnexion » mène maintenant à l'accueil (`signOutTarget()`
+  dans `guards.js`) — jamais à l'espace d'un rôle, la session vient de disparaître, et jamais à
+  `connexion.html`, qui présupposerait une envie de se reconnecter. `location.replace` empêche la
+  page protégée de rester dans l'historique à cette position ; le retour arrière d'un visiteur
+  déconnecté retombe sur la page de connexion (vérifié dans un navigateur).
 
 **Ce qui n'est pas prouvé — à vérifier avant toute mise en production**
 
