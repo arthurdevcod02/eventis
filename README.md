@@ -574,7 +574,8 @@ Ce réglage est dans le compte de l'exploitant, et je n'ai ni accès ni jeton ; 
 | Rendu mesuré | bureau 1280 px et **iPhone 390 × 844** (Safari iOS simulé) : bannière pleine largeur, **0 px de débordement horizontal**, guide en trois étapes déplié (473 px de haut, jamais hors viewport), boutons 135 × 40 et 88 × 40, fermeture 40 × 44 | **OK** |
 | `/admin/` **en vraie session administrateur** (mode démonstration) | aucune invitation alors que le pied de page — le point de branchement — est bien présent : `data-install` absent, `banniere: false` ; contrôle positif sur la page d'accueil du même navigateur, titre lu « Emportez Eventis partout avec vous » | **OK** |
 | Non-régression trouvée **par** la mesure | une fiche introuvable redirigeait vers `/404.html` et consommait l'invitation de la visite : le marqueur était un booléen. Il est devenu un compteur borné à deux pages — re-mesuré : après redirection, bannière présente et compteur à 1 | **OK** |
-| Firefox et iPhone **réels** | — | **non exécuté** : seul Chrome est pilotable ici. Les intitulés du menu Firefox et le panneau de partage Safari sont des formulations génériques, et le verrou l'interdit d'écrire : « l'intitulé exact varie selon la version ». |
+| Balayage **en production** (`https://eventis-app.netlify.app`, après le push `0e81faf..6280acd`) | accueil en **mode réel** : aucune invitation avant la temporisation, bannière rendue à 17 s avec le titre exact, pied de page soulevé de 112 px, **0 px de débordement** ; le `beforeinstallprompt` de Chrome est reçu **sur le site en ligne** donc le site est réellement installable en HTTPS public ; le clic appelle bien `prompt()` ; `/auth/connexion.html` sans invitation ; **390 × 844** sur `/catalogue.html` : bannière pleine largeur | **6 / 6 mesures**, 1 seul signal console — le badge Netlify déjà connu (§8), aucune violation liée à l'invitation |
+| Firefox et iPhone **réels** | — | **non exécuté** : seul Chrome est pilotable ici. Les intitulés du menu Firefox et le panneau de partage Safari sont des formulations génériques, et le verrou l'interdit d'écrire : « l'intitulé exact varie selon la version ». Un `prompt()` joué en headless ne reçoit jamais de réponse : la bannière reste affichée, aucun message, rien d'écrit — c'est le comportement honnête, pas la preuve du panneau natif Android. |
 
 **Limites connues, assumées et non masquées**
 
@@ -587,12 +588,11 @@ Ce réglage est dans le compte de l'exploitant, et je n'ai ni accès ni jeton ; 
   **retour** (consentement, échange de code, session) n'a **jamais** été parcouru contre le vrai
   fournisseur (voir §7bis).
 - **PWA** : manifeste et service worker validés par mesure interne ; l'invitation à installer et
-  l'événement `beforeinstallprompt` ont été mesurés dans Chrome (y compris un événement **de
-  confiance**, et non une simulation). Ce qui reste **non prouvé** : le panneau d'installation natif
-  Android/Chrome réel — un `prompt()` joué en headless ne reçoit jamais de réponse, donc la bannière
-  reste affichée et rien n'est affirmé —, le panneau de partage Safari sur un vrai iPhone, et les
-  intitulés exacts du menu Firefox. L'installabilité en HTTPS public est à re-mesurer après le
-  déploiement de ce commit.
+  l'événement `beforeinstallprompt` ont été mesurés dans Chrome — **y compris sur le site en ligne**,
+  où l'événement est de confiance et où le clic déclenche réellement `prompt()`. Ce qui reste
+  **non prouvé** : le panneau d'installation natif vu par un humain (un `prompt()` joué en headless ne
+  reçoit jamais de réponse, donc la bannière reste affichée et rien n'est affirmé), le panneau de
+  partage Safari sur un vrai iPhone, et les intitulés exacts du menu Firefox.
 - **Photos** : visuels de démonstration générés (≈ 1,9 Mo au total, ré-encodés pour les connexions
   lentes), pas des prestations réelles.
 - **Photos hébergées plus tard dans Supabase Storage** : la CSP fixe `img-src 'self'`, donc une image
