@@ -199,17 +199,25 @@ messages et des avis — dont un avis en attente de modération, pour montrer la
 **Toutes les données sont fictives** : e-mails en `@demo.tg` / `@example.tg`, téléphones
 normalisés non attribués, photos générées.
 
+Ces trois identifiants ouvrent une session **en mode démonstration** (données du navigateur). Sur un
+projet Supabase où la purge du §7 a été jouée, ils n'existent plus et la page de connexion renvoie
+l'erreur d'authentification — c'est le but : ces mots de passe sont publics dans ce dépôt.
+
 ### Exécuter les tests
 
 ```bash
 node --test "tests/*.test.js"
 ```
 
-82 tests natifs, sur six fichiers : couche de données (mode démo, contrat `site_settings`),
+89 tests natifs, sur sept fichiers : couche de données (mode démo, contrat `site_settings`),
 authentification démo et contrat OAuth (`signInWithGoogle`, profil en attente, complément
 d'inscription), contrat de garde de session Supabase, helpers de redirection Google, formats
-français (`Intl`, FCFA, dates), verrous du mode maintenance et **verrous des en-têtes livrés**
-(`tests/headers.test.js` : CSP directive par directive, absence de script inline dans les 28 pages).
+français (`Intl`, FCFA, dates), verrous du mode maintenance, **verrous des en-têtes livrés**
+(`tests/headers.test.js` : CSP directive par directive, absence de script inline dans les 28 pages)
+et **verrous des fichiers de purge** (`tests/purge.test.js` : ordre imposé par les clés étrangères,
+garde-fou d'administrateur, fichier d'état des lieux strictement en lecture, liste des comptes lue à
+partir de `seed.sql`). Les sept verrous de purge ont été vérifiés par contrôle négatif : chaque
+invariant cassée une à une fait bien tomber le test correspondant.
 
 ## 7. Configuration Supabase (mode réel)
 
@@ -221,7 +229,9 @@ change pas le drapeau de maintenance). `seed.sql` y a aussi été exécuté : **
 démonstration sont encore en base** et doivent être purgés avant d'accueillir de vrais clients.
 Ce qui reste **non validé** : le consentement Google réel et son retour (§7bis), et les droits des
 fonctions SQL `security definer` tels qu'ils existent dans cette instance (à relire dans
-Supabase → Authentication → Policies / Database Functions).
+Supabase → Authentication → Policies / Database Functions). La purge des comptes de seed et des
+sondes de QA, elle, est **écrite et verrouillée par tests mais pas encore jouée** : voir
+« Purger une base qui a servi de terrain de jeu » plus bas dans ce paragraphe.
 
 1. Créer un projet sur [supabase.com](https://supabase.com).
 2. Dans le **SQL Editor**, exécuter dans cet ordre :
@@ -260,6 +270,49 @@ Supabase → Authentication → Policies / Database Functions).
   alter table public.profiles add column email text;
   update public.profiles p set email = u.email from auth.users u where p.id = u.id;
   ```
+
+### Purger une base qui a servi de terrain de jeu
+
+`seed.sql` crée de vrais comptes `auth.users` avec le mot de passe `demo1234`, et ce mot de passe
+est publié deux fois dans le dépôt (le fichier lui-même et le §6 ci-dessus). Tant que ces lignes
+existent sur un projet en ligne, **n'importe qui peut ouvrir une session — y compris
+administratrice — sur ton instance**, avec des identifiants que tu as toi même rendus publics. Les
+sondes de QA, elles, laissent des comptes, des demandes, des fils de messages et des avis de test
+dont personne n'a besoin. Quatre fichiers, à coller un par un dans le **SQL Editor** :
+
+| Fichier | Écrit ? | Ce qu'il fait |
+|---|---|---|
+| [`supabase/purge-etat-des-lieux.sql`](supabase/purge-etat-des-lieux.sql) | **non** | Qui peut se connecter, à qui appartiennent les fiches, ce que chaque variante emporterait, et le nombre d'administrateurs survivants. À lancer **avant** toute purge. |
+| [`supabase/purge-sondes-qa.sql`](supabase/purge-sondes-qa.sql) | oui | Les comptes de test (`qa.eventis.*`, `*.qa@…`, `…@qa.tg`, `qa@demo.tg`) avec leurs demandes, messages, avis, fiches déposées et messages de contact. **Le catalogue de démonstration n'est pas touché.** |
+| [`supabase/purge-demo-catalogue-intact.sql`](supabase/purge-demo-catalogue-intact.sql) | oui | Les 14 comptes du seed, **en réattachant** les 10 fiches et les avis à un administrateur qui survit : le site reste peuplé, les connexions de démo disparaissent. |
+| [`supabase/purge-demo-catalogue-vide.sql`](supabase/purge-demo-catalogue-vide.sql) | oui | Les 14 comptes **et** tout ce qu'ils portaient (fiches, prestations, avis, demandes, messages). Les 8 catégories restent : c'est une taxonomie, pas un contenu fictif. Choix honnête si le site ne doit rien laisser croire. |
+
+Trois choses sont garanties par construction dans les fichiers qui écrivent, et vérifiées par
+`tests/purge.test.js` :
+
+- **un seul bloc `do $$ … end $$`** = une seule instruction = tout ou rien. Si une vérification
+  échoue, aucune ligne n'a été touchée ;
+- **garde-fou d'administrateur** : si la purge devait retirer le dernier compte `admin`, le fichier
+  lève une exception au lieu d'exécuter. Sans lui, `/admin` et la bascule de maintenance
+  deviennent inaccessibles, et `admin@demo.tg` est justement dans la liste à supprimer ;
+- **ordre dicté par les clés étrangères** : `messages`, `reviews`, `requests`, `providers`,
+  `contact_messages`, `profiles`, puis `auth.users` en dernier. Quatre de ces liens n'ont **pas** de
+  cascade (`requests.client_id`, `requests.provider_id`, `messages.sender_id`, `reviews.client_id`),
+  donc un ordre différent fait échouer la purge en cours de route — ou, pire, emporte des lignes
+  voisines par cascade.
+
+Prérequis avant les deux dernières lignes du tableau : un compte administrateur réel.
+`update public.profiles set role = 'admin' where email = 'ton@adresse';` après inscription, et
+l'état des lieux doit afficher « administrateurs survivants = 1 ».
+
+Après purge, **ne relance jamais `seed.sql`** sur ce projet : il réinsère les 14 comptes et rouvre
+exactement le trou qu'on vient de fermer. Le mode démonstration du navigateur
+(`assets/js/core/seed.js`) est une autre mécanique, sans aucun compte réel, et n'est pas concerné.
+
+Ces quatre fichiers sont **relus et verrouillés par tests, jamais exécutés** : aucune instance
+Postgres n'est accessible depuis la machine de développement, et je n'écris pas dans ta base à ta
+place. Le premier se passe de preuve d'exécution (il ne fait que lire) ; pour les trois autres, la
+preuve est le `select` final de chaque fichier, qui doit afficher les compteurs attendus.
 
 **Ce qui reste indisponible tant que cette configuration n'est pas faite :** persistance partagée
 entre navigateurs, e-mail de réinitialisation de mot de passe, consultation des messages de
@@ -381,6 +434,20 @@ Aucune donnée de session Google n'a été fabriquée pour faire croire au contr
   `example.com` est refusé par `connect-src` ; un `<script>` ajouté en console ne s'exécute pas
   (`window.__pvu` reste `undefined`) ; l'appel réel à Supabase passe (200) ; et le clic « Connexion
   avec Google » décolle toujours vers `accounts.google.com`.
+- **Le badge « Powered by Netlify » est bloqué par la CSP, et c'est voulu.** Netlify injecte lui-même
+  sur chaque page produite un `<script async src="/.netlify/scripts/hud">` (repéré en production, pas
+  deviné : la liste des scripts d'une page en ligne ne contient que nos fichiers, plus celui-là). Ce
+  script construit un `iframe` en `srcdoc`, donc exécute du code inline. Sous `script-src 'self'`, la
+  violation est bloquée et le badge ne s'affiche pas — la page, elle, se charge et fonctionne
+  intégralement (mesuré : 15 URL en production, aucune erreur d'affichage, images et navigation
+  correctes, catalogue peuplé). La documentation de l'hébergeur est explicite : autoriser le badge
+  exige `'unsafe-inline'` dans `script-src`, et il n'existe ni nonce ni hash prévu pour lui.
+  **Arbitrage rendu : on ne rouvre pas `script-src` pour un badge.** Un `unsafe-inline` autorisé pour
+  le badge l'est aussi pour tout script qu'une faille XSS injecterait — c'est exactement la porte que
+  cette CSP ferme. La sortie propre est du côté de l'hébergeur, en un clic et sans redéploiement :
+  **Netlify → Project configuration → General → « Powered by Netlify badge » → off**. Tant que
+  ce réglage n'a pas été fait, chaque page en ligne écrit une violation CSP dans la console du
+  navigateur — sans effet visible, mais comptabilisée (voir §9).
 - **Service worker strict** : uniquement les `GET` de la même origine, aucune mise en cache des
   URLs paramétrées, `sw.js` jamais caché, et les appels vers `*.supabase.co` explicitement exclus.
 - **`config.js` n'attend pas la prochaine visite.** Le cache-d'abord est juste pour les ressources
@@ -475,6 +542,20 @@ en production**.
 | Contrôle négatif (la CSP tient-elle, ou seulement s'affiche-t-elle ?) | `fetch` vers `example.com` → refusé par `connect-src` (`TypeError`, message de violation dans la console) ; `<script>` ajouté par du code → **non exécuté** (`window.__pvu` reste `undefined`) ; appel réel à `hzhoddyrakfwpucyrcig.supabase.co` → 200 et drapeau lu | **3 / 3** |
 | Thème et rendu sous CSP | thème sombre relancé depuis `localStorage` (`dataset.theme = "dark"`, fond `rgb(17,17,17)`) ; 7 barres du graphique admin dimensionnées par attribut `style` (échantillon 160 px) | **OK** |
 | Départ OAuth | clic « Connexion avec Google » en mode réel → navigation jusqu'à `accounts.google.com/v3/signin` avec le `redirect_uri` du site | **OK** (retour toujours non parcouru) |
+| Balayage **en production** (`https://eventis-app.netlify.app`, après déploiement) | 15 URL : les en-têtes CSP sont bien livrés sur chaque page, le site s'affiche et se comporte (cartes du catalogue, images, navigation) | **15 / 15 pages chargées**, mais **33 signaux console** — tous la même violation : le script du badge Netlify, inline, refusé par `script-src 'self'` (§8). Zéro autre erreur. |
+
+**Ce qu'il reste à faire d'un clic, de mon côté impossible** : couper le badge dans l'interface
+Netlify ramène ces 33 signaux à **0** sans redéploiement (l'injection s'arrête à la demande suivante).
+Ce réglage est dans le compte de l'exploitant, et je n'ai ni accès ni jeton ; la mesure « production,
+0 violation » sera donc rejouée après son activation, pas avant.
+
+**Purge de la base — campagne du 16 octobre 2026**
+
+| Campagne | Portée | Résultat |
+|---|---|---|
+| `node --test` (7 fichiers, dont `tests/purge.test.js`) | liste des 14 comptes lue depuis `seed.sql` et aucun uuid hors seed dans les fichiers ; état des lieux strictement en lecture ; ordre des `delete` conforme aux clés étrangères sans cascade ; comptes supprimés en dernier ; services, catégories et `site_settings` jamais touchés ; les trois gardes-fous d'administrateur ; `update` de réattachage dans la variante « catalogue intact » contre `delete` dans la variante « catalogue vide » ; select de preuve en fin de chaque fichier | **7 / 7** |
+| Contrôle négatif des sept verrous | sept invariant cassées une à une (ordre inversé, écriture ajoutée au fichier de lecture, fiches détruites dans la variante qui les conserve, chaque garde-fou supprimé, avis laissés rattachés à une demande, uuid hors seed introduit) puis restauration octet pour octet et relecture | **7 / 7 en échec attendu**, suite revenue à 7 vertes après restauration |
+| Exécution réelle des purges | — | **non exécuté** : aucune instance Postgres ici, et je n'écris pas dans ta base. À jouer dans le SQL Editor, `purge-etat-des-lieux.sql` d'abord (§7). |
 
 **Limites connues, assumées et non masquées**
 
@@ -553,7 +634,7 @@ assets/js/pages/       un module par page
 assets/vendor/         GSAP, ScrollTrigger, supabase-js — fichiers locaux
 assets/fonts/          Syne et Plus Jakarta Sans, servies en local
 assets/screenshots/    captures du README
-supabase/              schema.sql, rls.sql, seed.sql, maintenance.sql
+supabase/              schema.sql, rls.sql, seed.sql, maintenance.sql + purge-*.sql (4 fichiers)
 netlify/edge-functions/ maintenance.js — le filtre qui ferme le site (déployé, jamais publié dans dist/)
 tools/                 serve.js (serveur de développement), export-seed.mjs, build-dist.mjs
 tests/                 tests Node natifs (node:test)
@@ -589,6 +670,11 @@ Déploiement :
    URL : c'est la valeur `<domaine>` des §7 et §7bis (Site URL, Redirect URLs, origines Google).
 5. Domaines : ajouter un domaine dans les paramètres Netlify si besoin ; HTTPS est fourni
    automatiquement, condition du service worker et de l'installation PWA.
+6. **Couper le badge Netlify** : *Project configuration → General → « Powered by Netlify badge » →
+   off*. Sans ce réglage, l'hébergeur injecte sur chaque page un script inline que notre
+   `script-src 'self'` refuse à juste titre : le site s'affiche normalement mais la console du
+   visiteur porte une violation CSP par page (§8). Le changement prend effet à la demande suivante,
+   sans redéploiement.
 
 Contrôles rejoués sur le site **assemblé** (14 contrôles, tous verts) : les 24 URLs de pages
 répondent, aucun fichier interne du dépôt n'est atteignable (`supabase/`, `tests/`, `docs/`,
