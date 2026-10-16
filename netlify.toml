@@ -43,3 +43,35 @@
   for = "/*"
   [headers.values]
     X-Content-Type-Options = "nosniff"
+
+    # Clickjacking : une page d'un autre site ne peut pas afficher Eventis dans un iframe.
+    # Sans ça, une page pirate peut superposer un bouton au panneau /admin/ et faire cliquer
+    # l'administrateur à sa place. X-Frame-Options complète `frame-ancestors` ci-dessous pour
+    # les navigateurs qui ne lisent pas encore la CSP.
+    X-Frame-Options = "DENY"
+
+    # Une sortie vers un tiers (le saut d'authentification chez Google) ne transmet que
+    # l'origine d'Eventis, jamais l'URL complète : le « ?code= » d'un retour OAuth et le jeton
+    # d'une réinitialisation de mot de passe ne se retrouvent pas dans les journaux d'un tiers.
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+    # Le site n'utilise ni caméra, ni micro, ni géolocalisation, ni API de paiement, ni partage
+    # d'écran : ces droits sont refusés à la source, même si une extension ou un contenu tiers
+    # les demande. `interest-cohort=()` ferme l'attribution d'audience du navigateur.
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), display-capture=(), interest-cohort=()"
+
+    # Le mur contre le script injecté. Ce site n'a que des scripts du dépôt, chargés depuis la
+    # même origine : `script-src 'self'` est possible SANS « 'unsafe-inline' », parce que le
+    # bootstrap de thème qui vivait en `<script>` inline dans les 28 pages est devenu
+    # /assets/js/theme-bootstrap.js. Un `<script>` injecté par une faille XSS, un `javascript:`
+    # et les gestionnaires `onclick=` écrits dans du HTML ne s'exécutent plus.
+    # Les attributs `style="…"` restent autorisés : le graphique de statistiques de l'admin et
+    # les squelettes du catalogue dimensionnent leurs blocs de cette façon, et un style ne peut
+    # pas exécuter de code — le risque résiduel est un maquillage de l'interface, pas un vol.
+    # `connect-src` liste les supabase.co par joker : l'URL exacte du projet est injectée dans
+    # config.js au build à partir des variables Netlify et ne vit pas dans le dépôt. Un joker
+    # autorise un autre projet Supabase, mais seulement pour une requête déjà lancée depuis une
+    # page où l'exécution de script est interdite.
+    # `frame-src` est absent : il hérite de `default-src 'self'`. Le flux Supabase → Google est
+    # une navigation principale (hors CSP), pas un iframe ; un iframe tiers caché est refusé.
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self'; font-src 'self'; connect-src 'self' https://*.supabase.co; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; upgrade-insecure-requests"

@@ -57,10 +57,18 @@ test('la edge function ne filtre ni l’admin, ni la connexion, ni sa propre pag
   const exclus = code.match(/excludedPath: \[([\s\S]*?)\]/)?.[1] ?? '';
   // Boucle de réécriture : /maintenance.html doit être exclu du filtre.
   // Irréversibilité : sans /auth/, plus aucun admin ne peut se connecter pour rouvrir.
-  for (const chemin of ["'/assets/*'", "'/admin/*'", "'/auth/*'", "'/maintenance.html'"]) {
+  // /admin et /auth SANS barre finale : `/admin/*` ne couvre pas l'URL `/admin` que l'on
+  // obtient en tapant l'adresse courte — l'administrateur aurait été renvoyé sur la page de
+  // coupure, donc privé de l'interrupteur qui sert à la rouvrir.
+  for (const chemin of ["'/assets/*'", "'/admin/*'", "'/auth/*'", "'/maintenance.html'", "'/admin'", "'/auth'"]) {
     assert.ok(exclus.includes(chemin), `excludedPath doit contenir ${chemin}`);
   }
   assert.match(code, /EXEMPTES_PREFIXES = \[[^\]]*\/admin\/[^\]]*\/auth\//);
+  assert.match(code, /EXEMPTS_CHEMINS = new Set\(\[[\s\S]*'\/admin',[\s\S]*'\/auth',/);
+  // La réponse 503 est fabriquée par la fonction : Netlify n'y applique pas les en-têtes
+  // personnalisés du dépôt. Sans report depuis le fichier statique, la page de maintenance
+  // serait la seule page en ligne sans Content-Security-Policy.
+  assert.match(code, /new Headers\(ressource\.headers\)/);
   assert.match(code, /onError: 'bypass'/);
   assert.match(code, /status: 503/);
   // Le drapeau se lit avec les variables du site, jamais en dur dans le dépôt.

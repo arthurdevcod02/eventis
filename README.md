@@ -205,17 +205,23 @@ normalisés non attribués, photos générées.
 node --test "tests/*.test.js"
 ```
 
-48 tests natifs : couche de données (mode démo), authentification démo et contrat OAuth
-(`signInWithGoogle`, profil en attente, complément d'inscription), contrat de garde de session
-Supabase, helpers de redirection Google, formats français (`Intl`, FCFA, dates).
+82 tests natifs, sur six fichiers : couche de données (mode démo, contrat `site_settings`),
+authentification démo et contrat OAuth (`signInWithGoogle`, profil en attente, complément
+d'inscription), contrat de garde de session Supabase, helpers de redirection Google, formats
+français (`Intl`, FCFA, dates), verrous du mode maintenance et **verrous des en-têtes livrés**
+(`tests/headers.test.js` : CSP directive par directive, absence de script inline dans les 28 pages).
 
 ## 7. Configuration Supabase (mode réel)
 
-⚠️ **À lire avant de commencer :** ces fichiers SQL n'ont **jamais été exécutés sur une véritable
-instance** — ni `schema.sql`, ni `rls.sql`, ni `seed.sql` (aucun Postgres disponible sur la
-machine de développement, installation non autorisée). Ils ont été relus ligne à ligne, et cette
-relecture a corrigé quatre trous de sécurité réels, mais **le mode réel doit être considéré comme
-non validé** tant que la procédure ci-dessous n'a pas été jouée une fois sur un vrai projet.
+**État réel (16 octobre 2026)** : `schema.sql`, `rls.sql`, les correctifs de cloisonnement
+(`4add89e`, `e9ed774`) et `maintenance.sql` **ont été joués sur le projet en ligne**, et les
+séparations de rôles ont été mesurées depuis le navigateur (un client ne lit pas les fiches
+privées d'un prestataire, un prestataire ne se décerne pas le badge, un visiteur non connecté ne
+change pas le drapeau de maintenance). `seed.sql` y a aussi été exécuté : **ses comptes de
+démonstration sont encore en base** et doivent être purgés avant d'accueillir de vrais clients.
+Ce qui reste **non validé** : le consentement Google réel et son retour (§7bis), et les droits des
+fonctions SQL `security definer` tels qu'ils existent dans cette instance (à relire dans
+Supabase → Authentication → Policies / Database Functions).
 
 1. Créer un projet sur [supabase.com](https://supabase.com).
 2. Dans le **SQL Editor**, exécuter dans cet ordre :
@@ -356,6 +362,25 @@ Aucune donnée de session Google n'a été fabriquée pour faire croire au contr
 - **Échappement HTML systématique** (`esc()` dans `ui.js`) : une charge utile
   `<img src=x onerror=…>` saisie dans un formulaire reste du texte affiché, jamais exécuté
   (contrôlé côté inscription, profil et tableau admin).
+- **Content-Security-Policy en service** ([`netlify.toml`](netlify.toml)) : `script-src 'self'`,
+  **sans** `'unsafe-inline'` ni `'unsafe-eval'`. Le site n'a que des scripts du dépôt, donc un
+  script injecté par une faille XSS ne s'exécute plus — c'est la seconde porte derrière `esc()`.
+  Le bootstrap de thème, seul `<script>` inline des 28 pages, est devenu
+  [`assets/js/theme-bootstrap.js`](assets/js/theme-bootstrap.js) pour rendre ce réglage possible ;
+  `tests/headers.test.js` empêche qu'un `<script>` inline ou un `onclick=` revienne dans une page.
+  Avec : `connect-src 'self' https://*.supabase.co` (le site ne parle qu'à Netlify et Supabase),
+  `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'`,
+  `X-Frame-Options: DENY` (clickjacking), `Referrer-Policy: strict-origin-when-cross-origin`
+  (un retour OAuth ou un jeton de réinitialisation ne part pas chez un tiers),
+  `Permissions-Policy` refusant caméra, micro, géolocalisation, paiement et partage d'écran.
+  Seul relâchement : `style-src … 'unsafe-inline'`, parce que le graphique de l'admin et les
+  squelettes du catalogue dimensionnent des blocs par attribut `style="…"` ; un style ne peut pas
+  exécuter de code.
+  **Mesuré**, sur `dist/` servi par un serveur qui rejoue ces en-têtes (un serveur local muet ne
+  prouverait rien) : 29 URL dans les quatre espaces, zéro violation ; un `fetch` vers
+  `example.com` est refusé par `connect-src` ; un `<script>` ajouté en console ne s'exécute pas
+  (`window.__pvu` reste `undefined`) ; l'appel réel à Supabase passe (200) ; et le clic « Connexion
+  avec Google » décolle toujours vers `accounts.google.com`.
 - **Service worker strict** : uniquement les `GET` de la même origine, aucune mise en cache des
   URLs paramétrées, `sw.js` jamais caché, et les appels vers `*.supabase.co` explicitement exclus.
 - **`config.js` n'attend pas la prochaine visite.** Le cache-d'abord est juste pour les ressources
@@ -375,18 +400,30 @@ Aucune donnée de session Google n'a été fabriquée pour faire croire au contr
 
 **Ce qui n'est pas prouvé — à vérifier avant toute mise en production**
 
-- L'exécution réelle de `schema.sql`, `rls.sql` et `seed.sql` sur une instance Supabase, et le
-  parcours complet en mode réel (inscription, session qui expire, accusés de lecture, modération).
-- Un audit de sécurité indépendant : la relecture et les tests couverts ici ne remplacent pas un
-  pentest.
-- Les en-têtes HTTP de production (CSP, HSTS) : le serveur de développement ne les pose pas ;
-  cela relève de l'hébergeur.
-- La protection contre l'abus du formulaire de contact (pas de limite de débit côté serveur).
+- Le parcours complet en mode réel n'a pas été rejoué page à page depuis un navigateur : inscription
+  réelle, session qui expire pendant une visite, accusés de lecture et modération n'ont été mesurés
+  que là où les tests de cloisonnement les croisent (§7).
+- **Un audit de sécurité indépendant** : la relecture, les verrous de tests et les mesures ci-dessus
+  ne remplacent pas un pentest.
+- **HSTS** (`Strict-Transport-Security`) : Netlify bascule le site en HTTPS et l'en-tête se règle
+  dans l'interface de l'hébergeur — je ne peux pas l'inspecter depuis le dépôt, donc rien n'est
+  affirmé à ce sujet.
+- **La page de maintenance servie en 503 portera-t-elle la CSP ?** `netlify.toml` pose ses
+  en-têtes sur les fichiers, pas sur une réponse fabriquée par une fonction : la edge function
+  relit donc ceux de `/maintenance.html` avant de renvoyer son 503. Ce report est écrit, testé en
+  texte, mais **jamais mesuré en ligne** — il faut pour cela actionner l'interrupteur admin, ce
+  qui n'a pas encore été fait.
+- Le formulaire de contact n'a pas de limite de débit côté serveur (pas de backend applicatif :
+  le message est écrit en base sous une politique d'insertion authentifiée ; l'abus vient d'un
+  compte légitime, pas d'une requête anonyme).
 - Le trajet OAuth Google de bout en bout (consentement réel, échange du code, retour sur
-  `connexion.html`) : seul le câblage applicatif est éprouvé, par simulation avec un faux client
-  (§7bis). L'interdiction faite à un compte Google de devenir administrateur repose sur trois
-  garde-fous (liste de rôles côté application, politique RLS d'auto-insertion, déclencheur
-  `guard_profile_privileges`), dont les deux derniers restent à valider sur une instance réelle.
+  `connexion.html`) : le départ est maintenant mesuré en navigateur jusqu'à la page de compte
+  Google, mais **le retour n'a jamais été parcouru** (il faut un vrai compte Google pour valider
+  les identifiants et le jeton). Le reste du câblage applicatif est éprouvé par simulation avec un
+  faux client (§7bis). L'interdiction faite à un compte Google de devenir administrateur repose
+  sur trois garde-fous (liste de rôles côté application, politique RLS d'auto-insertion,
+  déclencheur `guard_profile_privileges`), dont les deux derniers restent à valider sur une
+  instance réelle.
 
 ## 9. Tests et état du projet
 
@@ -429,14 +466,26 @@ page de maintenance » et « une requête directe non autorisée ne peut pas cha
 Netlify). Tant que cette mesure n'a pas eu lieu, le mode maintenance est **écrit, pas encore vérifié
 en production**.
 
+**En-têtes de sécurité — campagne du 16 octobre 2026**
+
+| Campagne | Portée | Résultat |
+|---|---|---|
+| `node --test` (6 fichiers, dont `tests/headers.test.js`) | CSP lue dans `netlify.toml` et directive par directive ; aucun `<script>` inline ni `onclick=` dans les 28 pages ; bootstrap de thème chargé sans `defer` avant `<body>` ; en-têtes `X-Frame-Options` / `Referrer-Policy` / `Permissions-Policy` / `nosniff` ; exemptions `/admin` et `/auth` sans barre finale dans la edge function ; report des en-têtes sur la réponse 503 | **82 / 82** |
+| Balayage en navigateur, **avec les en-têtes réellement posés** (`dist/` servi par un replay de `netlify.toml`, sessions admin, client et prestataire) | 29 URL : accueil, catalogue, fiche prestataire, contact, 404, maintenance, mentions, CGU, confidentialité, comment-ça-marche, 3 pages d'authentification, 6 pages admin, 4 pages client, 5 pages prestataire | **0 violation CSP, 0 erreur console, 0 image cassée** |
+| Contrôle négatif (la CSP tient-elle, ou seulement s'affiche-t-elle ?) | `fetch` vers `example.com` → refusé par `connect-src` (`TypeError`, message de violation dans la console) ; `<script>` ajouté par du code → **non exécuté** (`window.__pvu` reste `undefined`) ; appel réel à `hzhoddyrakfwpucyrcig.supabase.co` → 200 et drapeau lu | **3 / 3** |
+| Thème et rendu sous CSP | thème sombre relancé depuis `localStorage` (`dataset.theme = "dark"`, fond `rgb(17,17,17)`) ; 7 barres du graphique admin dimensionnées par attribut `style` (échantillon 160 px) | **OK** |
+| Départ OAuth | clic « Connexion avec Google » en mode réel → navigation jusqu'à `accounts.google.com/v3/signin` avec le `redirect_uri` du site | **OK** (retour toujours non parcouru) |
+
 **Limites connues, assumées et non masquées**
 
 - **Navigateurs** : seul **Chrome** a été piloté. **Firefox, Safari et Edge ne sont pas testés** —
   rien n'est revendiqué à leur sujet.
-- **Supabase** : **non testé sur une instance réelle** (voir §7 et §8). Le mode réel est donc
-  documenté, pas garanti.
-- **Google OAuth** : chemin codé et simulé, **jamais exécuté contre le vrai fournisseur** — ni
-  consentement, ni échange de code, ni retour réel (voir §7bis).
+- **Supabase** : le projet en ligne porte le schéma, le RLS et les politiques de site ; les
+  séparations de rôles ont été mesurées. Le parcours complet page à page en mode réel reste lui
+  (voir §7 et §8).
+- **Google OAuth** : le départ est mesuré en navigateur jusqu'à l'écran de compte Google ; le
+  **retour** (consentement, échange de code, session) n'a **jamais** été parcouru contre le vrai
+  fournisseur (voir §7bis).
 - **PWA** : manifeste et service worker validés par mesure interne ; l'invite « Installer
   l'application » n'est pas observable en headless et reste à confirmer sur mobile en HTTPS.
 - **Photos** : visuels de démonstration générés (≈ 1,9 Mo au total, ré-encodés pour les connexions

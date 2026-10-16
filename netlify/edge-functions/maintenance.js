@@ -29,6 +29,11 @@ const EXEMPTS_CHEMINS = new Set([
   '/contact.html',       // le lien « Nous écrire » de cette page doit conduire quelque part
   '/sw.js',              // le service worker : bloquer le worker casserait le site après la reprise
   '/manifest.webmanifest',
+  // Les mêmes espaces SANS barre finale : `/admin` et `/auth` ne correspondent pas à
+  // `/admin/`. Un administrateur qui tape l'adresse courte tombait sur la page de coupure et
+  // ne pouvait plus atteindre l'interrupteur — exactement l'effet inverse du but.
+  '/admin',
+  '/auth',
 ]);
 
 function doitEtreFiltre(chemin) {
@@ -96,14 +101,18 @@ export default async (request) => {
   try {
     const ressource = await fetch(new URL('/maintenance.html', url), { headers: { Accept: 'text/html' } });
     if (!ressource.ok) throw new Error(`statut ${ressource.status}`);
-    return new Response(ressource.body, {
-      status: 503,
-      headers: {
-        'content-type': 'text/html; charset=utf-8',
-        'cache-control': 'no-store',
-        'x-eventis-maintenance': 'active',
-      },
-    });
+    // Les en-têtes de sécurité (CSP, X-Frame-Options, Referrer-Policy, Permissions-Policy) sont
+    // portés par le fichier statique. Netlify n'ajoute PAS ses en-têtes personnalisés à une
+    // réponse fabriquée par une fonction : sans ce report, la page de maintenance serait la
+    // seule page du site sans CSP. Les valeurs restent celles du dépôt, il n'y a pas de seconde
+    // copie de la règle à entretenir ici.
+    const enTetes = new Headers(ressource.headers);
+    enTetes.delete('content-length');   // recalculé à partir du corps
+    enTetes.delete('content-encoding'); // la fonction reçoit le corps déjà décompressé
+    enTetes.set('content-type', 'text/html; charset=utf-8');
+    enTetes.set('cache-control', 'no-store');
+    enTetes.set('x-eventis-maintenance', 'active');
+    return new Response(ressource.body, { status: 503, headers: enTetes });
   } catch (erreur) {
     // Repli : réécriture même-site, statut 200. Le visiteur voit bien la page de
     // maintenance ; seul le code 503 se perd. Cette page mal codée vaut mieux qu'une
@@ -121,6 +130,8 @@ export const config = {
     '/assets/*',
     '/admin/*',
     '/auth/*',
+    '/admin',
+    '/auth',
     '/maintenance.html',
     '/contact.html',
     '/sw.js',
