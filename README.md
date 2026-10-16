@@ -472,9 +472,12 @@ Aucune donnée de session Google n'a été fabriquée pour faire croire au contr
   que là où les tests de cloisonnement les croisent (§7).
 - **Un audit de sécurité indépendant** : la relecture, les verrous de tests et les mesures ci-dessus
   ne remplacent pas un pentest.
-- **HSTS** (`Strict-Transport-Security`) : Netlify bascule le site en HTTPS et l'en-tête se règle
-  dans l'interface de l'hébergeur — je ne peux pas l'inspecter depuis le dépôt, donc rien n'est
-  affirmé à ce sujet.
+- **HSTS** (`Strict-Transport-Security`) : cette ligne n'est plus une inconnue, elle est mesurée en
+  production (§9) — `max-age=31536000; includeSubDomains; preload`, sans réglage de ma part. Ce que
+  je ne peux pas établir : si cette valeur vient de l'interface de ton compte ou du comportement par
+  défaut de l'hébergeur. Le jeton `preload` n'a d'effet que si le nom de domaine est inscrit sur la
+  liste HSTS ; sur un sous-domaine `netlify.app`, il est inoffensif, et il faudra le réévaluer le
+  jour d'un domaine perso.
 - **La page de maintenance servie en 503 portera-t-elle la CSP ?** `netlify.toml` pose ses
   en-têtes sur les fichiers, pas sur une réponse fabriquée par une fonction : la edge function
   relit donc ceux de `/maintenance.html` avant de renvoyer son 503. Ce report est écrit, testé en
@@ -543,6 +546,7 @@ en production**.
 | Thème et rendu sous CSP | thème sombre relancé depuis `localStorage` (`dataset.theme = "dark"`, fond `rgb(17,17,17)`) ; 7 barres du graphique admin dimensionnées par attribut `style` (échantillon 160 px) | **OK** |
 | Départ OAuth | clic « Connexion avec Google » en mode réel → navigation jusqu'à `accounts.google.com/v3/signin` avec le `redirect_uri` du site | **OK** (retour toujours non parcouru) |
 | Balayage **en production** (`https://eventis-app.netlify.app`, après déploiement) | 15 URL : les en-têtes CSP sont bien livrés sur chaque page, le site s'affiche et se comporte (cartes du catalogue, images, navigation) | **15 / 15 pages chargées**, mais **33 signaux console** — tous la même violation : le script du badge Netlify, inline, refusé par `script-src 'self'` (§8). Zéro autre erreur. |
+| En-têtes réellement **reçus** en production (`curl -I`, trois classes d'URL : page publique, `/admin/`, 404) | les six en-têtes sont présents sur les trois, y compris sur la 404 ; `Strict-Transport-Security: max-age=31536000; includeSubDomains; preload` est servi par l'hébergeur sans réglage de ma part | **6 / 6 en-têtes × 3 / 3 URL** |
 
 **Ce qu'il reste à faire d'un clic, de mon côté impossible** : couper le badge dans l'interface
 Netlify ramène ces 33 signaux à **0** sans redéploiement (l'injection s'arrête à la demande suivante).
@@ -571,6 +575,11 @@ Ce réglage est dans le compte de l'exploitant, et je n'ai ni accès ni jeton ; 
   l'application » n'est pas observable en headless et reste à confirmer sur mobile en HTTPS.
 - **Photos** : visuels de démonstration générés (≈ 1,9 Mo au total, ré-encodés pour les connexions
   lentes), pas des prestations réelles.
+- **Photos hébergées plus tard dans Supabase Storage** : la CSP fixe `img-src 'self'`, donc une image
+  servie depuis `*.supabase.co` serait **refusée** à l'affichage. Ce n'est pas un défaut de la
+  mesure — c'est son objet — mais ça devient une action : au jour où les photos de prestataires
+  passeraient par Storage, ajouter `https://*.supabase.co` à `img-src` (et seulement là) dans
+  `netlify.toml`, puis rejouer le balayage du §9.
 - **Messagerie** : non temps réel (pas de notification push).
 - **Périmètre** : pas de paiement, de réservation ni de contrat en ligne.
 
