@@ -6,7 +6,9 @@
 // dans tests/db.test.js (allers-retours DemoAdapter).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 const lire = chemin => readFileSync(new URL(chemin, import.meta.url), 'utf8');
 
@@ -64,6 +66,21 @@ test('la edge function ne filtre ni l’admin, ni la connexion, ni sa propre pag
   // Le drapeau se lit avec les variables du site, jamais en dur dans le dépôt.
   assert.match(code, /Netlify\.env\.get\('SUPABASE_URL'\)/);
   assert.doesNotMatch(code, /https:\/\/[a-z]+\.supabase\.co/);
+});
+
+// Verrou ajouté APRÈS coup : Netlify *compile* la edge function pendant le build, alors
+// que le navigateur ne la charge jamais et que les verrous ci-dessus la lisaient en
+// texte. Une chaîne collée à une autre sans `+` (maintenance.js:56) a donc fait échouer
+// tout le déploiement (« exit code 2 ») avec 76 tests au vert.
+test('les edge functions sont des modules JavaScript valides (Netlify les compile au build)', () => {
+  const dossier = new URL('../netlify/edge-functions/', import.meta.url);
+  const fichiers = readdirSync(dossier).filter(nom => nom.endsWith('.js'));
+  assert.ok(fichiers.length > 0, 'aucune edge function trouvée : le mode maintenance n’a plus de filtre');
+  for (const nom of fichiers) {
+    const chemin = fileURLToPath(new URL(nom, dossier));
+    const r = spawnSync(process.execPath, ['--check', chemin], { encoding: 'utf8' });
+    assert.equal(r.status, 0, `${nom} ne compile pas :\n${r.stderr}`);
+  }
 });
 
 test('la page de maintenance porte le texte du brief, sans date de retour inventée', () => {

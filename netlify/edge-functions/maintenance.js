@@ -54,7 +54,7 @@ async function litDrapeau() {
   if (!url || !cle) {
     // Silencieusement en surface, mais visible dans Logs & Metrics > Edge Functions.
     console.warn('[maintenance] SUPABASE_URL ou SUPABASE_ANON_KEY absente du contexte '
-      'd’exécution — variable d’environnement sans la portée « Functions » ? filtre non appliqué');
+      + 'd’exécution — variable d’environnement sans la portée « Functions » ? filtre non appliqué');
     memoire = { expire: maintenant + TTL_DRAPEAU_MS, actif: false };
     return memoire;
   }
